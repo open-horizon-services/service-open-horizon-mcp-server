@@ -1,0 +1,15 @@
+{
+  "properties": [
+    {
+      "name": "openhorizon.allowPrivileged",
+      "value": true
+    }
+  ],
+  "constraints": [],
+  "deployment": {
+    "properties": [
+      {"name": "mms-agent", "value": "MMS Agent"},
+      {"name": "worker-safety", "value": "Worker Safety"}
+    ]
+  }
+}

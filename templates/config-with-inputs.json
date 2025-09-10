@@ -1,0 +1,21 @@
+{
+  "ARCH": "amd64",
+  "HZN_ORG_ID": "playground",
+  "SERVICE_NAME": "chunk-saved-model-service",
+  "SERVICE_VERSION": "1.0.0",
+  "SERVICE_CONTAINER": "hub.docker.com/playbox21/chunk-saved-model-service_amd64:1.0.0",
+  "VOLUME_MOUNT": "/mms-shared",
+  "SHARED_VOLUME": "mms_shared_volume",
+  "MMS_OBJECT_TYPE": "mms_agent_config",
+  "MMS_OBJECT_ID": "mms_agent_config_json",
+  "MMS_OBJECT_FILE": "config/config.json",
+  "MMS_SERVICE_NAME": "mms-agent",
+  "MMS_CONTAINER": "hub.docker.com/playbox21/mms-agent_amd64:1.0.0",
+  "MMS_SERVICE_VERSION": "1.0.0",
+  "MMS_SERVICE_FALLBACK_VERSION": "1.0.0",
+  "MMS_UPDATE_FILE_NAME": "mms-agent-config.json",
+  "EXPOSE_PORT": "3000",
+  "APP_PORT": "3000",
+  "PRIVILEGED": true
+}
+
