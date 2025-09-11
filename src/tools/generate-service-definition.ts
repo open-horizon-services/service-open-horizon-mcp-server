@@ -173,7 +173,7 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
         .replace(/\\$SERVICE_CONTAINER/g, configData.SERVICE_CONTAINER)
         .replace(/\\$ARCH/g, configData.ARCH)
         .replace(/\\$VOLUME_MOUNT/g, configData.VOLUME_MOUNT)
-        .replace(/\\$MMS_SHARED_VOLUME/g, configData.SHARED_VOLUME)
+        .replace(/\\$SHARED_VOLUME/g, configData.SHARED_VOLUME)
         .replace(/\\$EXPOSE_PORT/g, configData.EXPOSE_PORT)
         .replace(/\\$APP_PORT/g, configData.APP_PORT);
       

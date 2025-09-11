@@ -130,7 +130,7 @@ export function registerPublishServiceTool(server: McpServer) {
       
       const response = await makePostRequest(serviceUrl, serviceDefinition, {
         Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
-      });
+      }, 'PUT');
       
       // If response has content property, it's already formatted as ToolResponse (error case)
       if (response && typeof response === 'object' && 'content' in response) {

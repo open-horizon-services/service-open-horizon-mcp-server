@@ -63,7 +63,7 @@ export async function makeHttpRequest<T = any>(url: string, headers: Record<stri
  * @param headers Optional headers to include in the request
  * @returns Promise resolving to the response data or an error ToolResponse
  */
-export async function makePostRequest<T = any>(url: string, data: any, headers: Record<string, string> = {}): Promise<T | ToolResponse> {
+export async function makePostRequest<T = any>(url: string, data: any, headers: Record<string, string> = {}, method = 'POST'): Promise<T | ToolResponse> {
   const finalHeaders = {
     "Accept": "application/json",
     "Content-Type": "application/json",
@@ -72,7 +72,7 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
 
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method: method,
       headers: finalHeaders,
       body: JSON.stringify(data)
     });
