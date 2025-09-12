@@ -6,11 +6,7 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makeHttpRequest, getErrorMessage } from '../services/common';
-import 'dotenv/config';
-
-const EXCHANGE_URL = process.env.EXCHANGE_URL;
-const ORG = process.env.EXCHANGE_ORG;
+import { makeHttpRequest, getErrorMessage, getExchangeParams } from '../services/common';
 
 /**
  * Register the check-policy-compatibility tool with the MCP server
@@ -26,20 +22,21 @@ export function registerCheckPolicyCompatibilityTool(server: McpServer) {
     org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       const { policyName } = params;
-      const organization = params.org || ORG;
+      // Access headers from the shared context
+      const {url, credential, organization} = getExchangeParams(params, context);
       
       if (!policyName) {
         return getErrorMessage("Policy name is required");
       }
       
       // First, get the policy details to verify it exists and get its constraints
-      const policyUrl = `${EXCHANGE_URL}/${organization}/business/policies/${policyName}`;
+      const policyUrl = `${url}/${organization}/business/policies/${policyName}`;
       console.log(`Fetching policy details from Exchange at ${policyUrl}`);
       const response = await makeHttpRequest(policyUrl, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       });
       
       // If policy response has content property, it's already formatted as ToolResponse (error case)

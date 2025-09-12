@@ -6,13 +6,9 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makePostRequest, getErrorMessage } from '../services/common';
+import { makePostRequest, getErrorMessage, getExchangeParams } from '../services/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import 'dotenv/config';
-
-const EXCHANGE_URL = process.env.EXCHANGE_URL;
-const ORG = process.env.EXCHANGE_ORG;
 
 /**
  * Register the register-node-policy tool with the MCP server
@@ -41,10 +37,11 @@ export function registerNodePolicyTool(server: McpServer) {
     org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       const { nodeName } = params;
-      const organization = params.org || ORG;
+      // Access headers from the shared context
+      const {url, credential, organization} = getExchangeParams(params, context);
       let policy = params.policy;
       
       if (!nodeName) {
@@ -103,11 +100,11 @@ export function registerNodePolicyTool(server: McpServer) {
       }
       
       // Register the node policy
-      const exchangeUrl = `${EXCHANGE_URL}/${organization}/nodes/${nodeName}/policy`;
+      const exchangeUrl = `${url}/${organization}/nodes/${nodeName}/policy`;
       console.log(`Registering node policy at ${exchangeUrl}`);
       
       const response = await makePostRequest(exchangeUrl, policy, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       });
       
       // If response has content property, it's already formatted as ToolResponse (error case)

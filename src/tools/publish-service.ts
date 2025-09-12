@@ -6,13 +6,9 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makeHttpRequest, makePostRequest, getErrorMessage } from '../services/common';
+import { makeHttpRequest, makePostRequest, getErrorMessage, getExchangeParams } from '../services/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import 'dotenv/config';
-
-const EXCHANGE_URL = process.env.EXCHANGE_URL;
-const ORG = process.env.EXCHANGE_ORG;
 
 /**
  * Register the publish-service tool with the MCP server
@@ -50,9 +46,10 @@ export function registerPublishServiceTool(server: McpServer) {
     org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
-      const organization = params.org || ORG;
+      // Access headers from the shared context
+      const {url, credential, organization} = getExchangeParams(params, context);
       let serviceDefinition = params.serviceDefinition;
       
       // If a complete service definition is not provided, build one from template
@@ -125,11 +122,11 @@ export function registerPublishServiceTool(server: McpServer) {
       }
       
       // Publish the service to the Exchange
-      const serviceUrl = `${EXCHANGE_URL}/${organization}/services/${serviceDefinition.url}_${serviceDefinition.version}_${serviceDefinition.arch}`;
+      const serviceUrl = `${url}/${organization}/services/${serviceDefinition.url}_${serviceDefinition.version}_${serviceDefinition.arch}`;
       console.log(`Publishing service to Exchange at ${serviceUrl}`);
       
       const response = await makePostRequest(serviceUrl, serviceDefinition, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       }, 'PUT');
       
       // If response has content property, it's already formatted as ToolResponse (error case)
