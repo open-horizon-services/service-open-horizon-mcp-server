@@ -67,11 +67,15 @@ The implementation of Model Context Protocol (MCP) servers for IBM products such
 
 ### Product-Specific Value Propositions
 
-- **NS1 with MCP**: Simplifies complex DNS management and network configuration through conversational AI, reducing configuration errors by 70%.
+- **NS1 with MCP - Enhanced conversational network automation**:
+  - Integrating NS1 with MCP transforms complex network configurations into conversational AI workflows, allowing agents to configure DNS and network settings in natural language. An AI orchestration framework (like LangChain) leverages NS1’s capabilities via the MCP layer to validate the configuration, significantly reducing human-induced errors and expediting network changes.
+  - How it's different from a chatbot: A traditional network chatbot or AI Assistant could only answer questions about DNS, like retrieving the status of a zone. An MCP-enabled agent, however, can proactively monitor the network, detect an anomaly, and use NS1's capabilities via MCP to autonomously resolve the issue and report its actions. It moves from passive answering to active execution.
 
-- **SevOne with MCP**: Transforms network monitoring data into actionable insights, enabling non-specialists to identify and resolve network issues 3x faster.
+- **SevOne with MCP - AI-powered network observability**:
+  - By exposing SevOne's telemetry data through an MCP server, the network monitoring data is transformed into actionable insights via an AI agent. For example, an agent could use an MCP tool to retrieve specific network performance metrics, and a retrieval framework (like LlamaIndex) could find related network documentation. An orchestration framework (like LangChain) could then interpret all this data, enabling even non-specialists to identify and resolve network issues more accurately and efficiently.
+  - How it's different from a chatbot: A legacy monitoring chatbot might provide a text response with a link to an outage report. In contrast, an MCP-enabled agent can actively monitor SevOne data, ingest a live streaming context of the network's health, correlate real-time anomalies with documentation via a RAG system, and initiate a self-healing action in another MCP-enabled system. The AI goes beyond simply retrieving a report and instead participates in resolving the incident.
 
-- **Open Horizon with MCP**: Streamlines edge computing deployment and management, reducing the complexity of managing distributed edge devices by 60%.
+- **Open Horizon with MCP**: Exposing Open Horizon's capabilities through an MCP server enables AI agents to autonomously deploy, update, and manage containerized workloads across large numbers of distributed edge devices. Unlike traditional chatbots which rely on static knowledge and require explicit user requests, an MCP-enabled agent can manage and reason across thousands of edge devices simultaneously using real-time data to make dynamic decisions and trigger self-healing actions or re-task devices based on changing needs
 
 ### Comparison: Model Context Protocol (MCP) vs. LangChain / LlamaIndex
 
