@@ -24,11 +24,11 @@ import { registerGenerateServiceDefinitionTool } from './tools/generate-service-
  * Factory to create and configure a new McpServer (tools/resources/prompts)
  * Note: We explicitly pass `capabilities` so that the client knows we support tools.
  */
-export function createMcpServer(initialHeaders: IncomingHttpHeaders): McpServer {
+export function createMcpServer(requestContext: any): McpServer {
   const server = new McpServer({
     name: 'open-horizon-mcp-server-v2',
     version: '1.0.0',
-
+    context: requestContext,
     // Declare that this server supports tools, resources, and prompts
     capabilities: {
       tools:     { listChanged: true },

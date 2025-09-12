@@ -29,6 +29,11 @@ dotenv.config();
  */
 const sessions: Record<string, SessionEntry> = {};
 
+// Define a simple object to hold the request context
+const requestContext = {
+  headers: {} as Record<string, string | string[] | undefined>
+};
+
 const l = log4js.getLogger();
 
 const MCP_PATH = '/mcp';
@@ -62,6 +67,9 @@ app.post(MCP_PATH, async (req, res) => {
   const sessionIdHeader = req.headers['mcp-session-id'];
   let sessionEntry = null;
 
+  // Update the shared context with the current request headers
+  requestContext.headers = req.headers;
+
   // Case 1: Existing session found
   const sessionId =
     typeof sessionIdHeader === 'string'
@@ -76,14 +84,15 @@ app.post(MCP_PATH, async (req, res) => {
   // Case 2: Initialization request → create new transport + server
   } else if (!sessionIdHeader && isInitializeRequest(req.body)) {
     const newSessionId = randomUUID();
-    const initialHeaders = {...req.headers};
+    // Create and configure the new McpServer
+    const server = createMcpServer(requestContext);
 
     // Create a new transport for this session
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => newSessionId,
       onsessioninitialized: (sid: string) => {
         // Store the Transport and Server instance once session is initialized
-        sessions[sid] = { server, transport, latestHeaders: initialHeaders};
+        sessions[sid] = { server, transport };
       }
     });
 
@@ -94,8 +103,6 @@ app.post(MCP_PATH, async (req, res) => {
       }
     };
 
-    // Create and configure the new McpServer
-    const server = createMcpServer(initialHeaders);
     await server.connect(transport);
 
     // After `onsessioninitialized` fires, `sessions[newSessionId]` is set.
