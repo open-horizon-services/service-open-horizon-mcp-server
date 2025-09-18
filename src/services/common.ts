@@ -8,9 +8,9 @@ const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
 export function getExchangeParams(params: any, context: any): {url: string, credential: string, organization: string} {
   // Access headers from the shared context
   const headers = context.requestInfo.headers || {};
-  const organization = params.org || headers['exchange_org'] || EXCHANGE_ORG;
-  const url = `${headers['exchange_url'] || EXCHANGE_URL}`;
-  const credential = `${headers['exchange_credential'] || EXCHANGE_CREDENTIAL}`;
+  const organization = params.org || headers['exchange-org'] || EXCHANGE_ORG;
+  const url = `${headers['exchange-url'] || EXCHANGE_URL}`;
+  const credential = `${headers['exchange-credential'] || EXCHANGE_CREDENTIAL}`;
   return {organization, url, credential}
 }
 /**

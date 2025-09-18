@@ -1,7 +1,7 @@
 /**
  * server.ts
  *
- * SevOne MCP Server (Streamable HTTP, Stateful)
+ * Open Horizon MCP Server (Streamable HTTP, Stateful)
  *
  * This server provides tools and resources for querying and analyzing SevOne network data
  * stored in InfluxDB.
@@ -156,7 +156,7 @@ app.get('/health', (req, res) => {
 // Start the server using PORT from environment variables
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`SevOne MCP Server listening on port: ${PORT}`);
+  console.log(`Open Horizon MCP Server listening on port: ${PORT}`);
 });
 
 // Prevent the Node.js process from exiting

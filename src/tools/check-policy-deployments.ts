@@ -59,7 +59,7 @@ export function registerCheckPolicyDeploymentsTool(server: McpServer) {
       const nodesUrl = `${url}/${organization}/nodes`;
       console.log(`Fetching nodes from Exchange at ${nodesUrl}`);
       const nodesResponse = await makeHttpRequest(nodesUrl, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       });
       
       // If nodes response has content property, it's already formatted as ToolResponse (error case)
