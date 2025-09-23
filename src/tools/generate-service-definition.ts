@@ -9,7 +9,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getErrorMessage } from '../services/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import 'dotenv/config';
 
 /**
  * Register the generate-service-definition tool with the MCP server
@@ -69,7 +68,7 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
     config: z.any().optional().describe('JSON object with configuration parameters'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       let configData: any = {};
       let serviceType = params.type;
