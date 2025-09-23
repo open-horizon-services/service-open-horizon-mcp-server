@@ -1,5 +1,18 @@
 import { ToolResponse } from "../models/model";
+import 'dotenv/config';
 
+const EXCHANGE_URL = process.env.EXCHANGE_URL || '';
+const EXCHANGE_ORG = process.env.EXCHANGE_ORG || '';
+const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
+
+export function getExchangeParams(params: any, context: any): {url: string, credential: string, organization: string} {
+  // Access headers from the shared context
+  const headers = context.requestInfo.headers || {};
+  const organization = params.org || headers['exchange-org'] || EXCHANGE_ORG;
+  const url = `${headers['exchange-url'] || EXCHANGE_URL}`;
+  const credential = `${headers['exchange-credential'] || EXCHANGE_CREDENTIAL}`;
+  return {organization, url, credential}
+}
 /**
  * Formats error messages into the expected ToolResponse format
  * @param err Error object or message

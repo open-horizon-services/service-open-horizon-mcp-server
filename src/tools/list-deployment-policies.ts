@@ -6,11 +6,7 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makeHttpRequest, getErrorMessage } from '../services/common';
-import 'dotenv/config';
-
-const EXCHANGE_URL = process.env.EXCHANGE_URL;
-const ORG = process.env.EXCHANGE_ORG;
+import { makeHttpRequest, getErrorMessage, getExchangeParams } from '../services/common';
 
 /**
  * Register the list-deployment-policies tool with the MCP server
@@ -29,14 +25,15 @@ export function registerListDeploymentPolicies(server: McpServer) {
     org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
-      const organization = params.org || ORG;
-      const exchangeUrl = `${EXCHANGE_URL}/${organization}/business/policies`;
+      // Access headers from the shared context
+      const {url, credential, organization} = getExchangeParams(params, context);
+      const exchangeUrl = `${url}/${organization}/business/policies`;
       
       console.log(`Fetching deployment policies from Exchange at ${exchangeUrl}`);
       const response = await makeHttpRequest(exchangeUrl, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       });
       
       // If response has content property, it's already formatted as ToolResponse (error case)

@@ -6,11 +6,7 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makeDeleteRequest, getErrorMessage } from '../services/common';
-import 'dotenv/config';
-
-const EXCHANGE_URL = process.env.EXCHANGE_URL;
-const ORG = process.env.EXCHANGE_ORG;
+import { makeDeleteRequest, getErrorMessage, getExchangeParams } from '../services/common';
 
 /**
  * Register the unregister-node tool with the MCP server
@@ -27,20 +23,21 @@ export function registerUnregisterNodeTool(server: McpServer) {
     org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
-  const toolCallback = async (params: any): Promise<any> => {
+  const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       const { name } = params;
-      const organization = params.org || ORG;
+      // Access headers from the shared context
+      const {url, credential, organization} = getExchangeParams(params, context);
       
       if (!name) {
         return getErrorMessage("Node name is required");
       }
       
-      const exchangeUrl = `${EXCHANGE_URL}/${organization}/nodes/${name}`;
+      const exchangeUrl = `${url}/${organization}/nodes/${name}`;
       
       console.log(`Unregistering node from Exchange at ${exchangeUrl}`);
       const response = await makeDeleteRequest(exchangeUrl, {
-        Authorization: `Basic ${process.env.EXCHANGE_CREDENTIAL}`
+        Authorization: `Basic ${credential}`
       });
       
       // If response has content property, it's already formatted as ToolResponse (error case)
