@@ -16,6 +16,7 @@
     "build:doall": "npm run code-engine --task=doall",
     "build:image": "npm run build && npm run code-engine --task=build --name=$npm_package_name",
     "deploy:prod:all": "npm run build:doall --name=$npm_package_name --env=prod",
+    "deploy:prod:create:all:omit-credential": "npm run deploy:prod:all --create=true --omitcredential=true --region=dockerhub --namespace=playbox21",
     "deploy:stage:all": "npm run build:doall --name=$npm_package_name  --env=stage",
     "deploy:dev:all": "npm run build:doall --name=$npm_package_name  --env=dev",
     "deploy:prod": "npm run code-engine --task=deploy --name=$npm_package_name --env=prod",

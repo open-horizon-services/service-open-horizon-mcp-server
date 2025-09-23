@@ -1,0 +1,53 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp-server-fetch.1zcqw752hw76.us-south.codeengine.appdomain.cloud/sse"
+      ]
+    },
+    "my-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "mcp-remote", 
+        "http://localhost:3000/mcp",
+        "--header",
+        "Authorization:${MCP_AUTH_TOKEN}"
+      ],
+      "env": {
+        "MCP_AUTH_TOKEN": "Bearer my-mcp-secret"
+      }
+    },
+    "open-horizon-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "mcp-remote", 
+        "https://open-horizon-mcp-server-dev.1zcqw752hw76.us-south.codeengine.appdomain.cloud/mcp",
+        "--header",
+        "exchange-org:playground",
+        "--header",
+        "exchange-url:http://open-horizon-2.lfedge.iol.unh.edu:3091/v1/orgs",
+        "--header",
+        "exchange-credential:********************",
+        "--header",
+        "Authorization:Bearer *******************"
+      ]
+    },
+    "sevone-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "mcp-remote", 
+        "http://localhost:3003/mcp",
+        "--header",
+        "Authorization:${MCP_AUTH_TOKEN}"
+      ],
+      "env": {
+        "MCP_AUTH_TOKEN": "Bearer my-mcp-secret"
+      }
+    }
+  }
+}
