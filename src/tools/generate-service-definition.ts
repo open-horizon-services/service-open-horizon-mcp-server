@@ -151,9 +151,9 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
       // Load the appropriate template
       let templatePath;
       if (serviceType === 'basic') {
-        templatePath = path.join(process.cwd(), 'open-horizon-mcp-v2', 'templates', 'service-definition.json');
+        templatePath = path.join(process.cwd(), 'templates', 'service-definition.json');
       } else {
-        templatePath = path.join(process.cwd(), 'open-horizon-mcp-v2', 'templates', 'service-definition-with-inputs.json');
+        templatePath = path.join(process.cwd(), 'templates', 'service-definition-with-inputs.json');
       }
       
       console.log(`Loading template from ${templatePath}`);
