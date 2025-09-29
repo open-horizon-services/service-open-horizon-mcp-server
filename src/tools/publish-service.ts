@@ -31,11 +31,16 @@ export function registerPublishServiceTool(server: McpServer) {
     - Additional parameters as needed
   `;
   const toolSchema = {
-    serviceDefinition: z.any().optional().describe('Complete service definition as JSON'),
+    serviceDefinition: z.union([
+      z.string().describe('Service definition as JSON string'),
+      z.record(z.any()).describe('Service definition as JSON object')
+    ]).describe('Complete service definition as JSON string or object'),
+    org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
+    // Keep template parameters as fallback
     templateType: z.enum(['basic', 'with-inputs']).optional().describe('Type of template to use: "basic" or "with-inputs"'),
-    serviceName: z.string().optional().describe('The name of the service'),
-    serviceVersion: z.string().optional().describe('The version of the service'),
-    serviceContainer: z.string().optional().describe('The container image for the service'),
+    serviceName: z.string().optional().describe('The name of the service (only needed if not using complete serviceDefinition)'),
+    serviceVersion: z.string().optional().describe('The version of the service (only needed if not using complete serviceDefinition)'),
+    serviceContainer: z.string().optional().describe('The container image for the service (only needed if not using complete serviceDefinition)'),
     arch: z.string().optional().describe('The architecture (default: "amd64")'),
     volumeMount: z.string().optional().describe('The volume mount path (default: "/mms-shared")'),
     exposePort: z.string().optional().describe('The port to expose (default: "3000")'),
@@ -43,17 +48,64 @@ export function registerPublishServiceTool(server: McpServer) {
     mmsObjectType: z.string().optional().describe('The MMS object type (for with-inputs template)'),
     mmsVolume: z.string().optional().describe('The MMS volume (for with-inputs template)'),
     updateFileName: z.string().optional().describe('The update file name (for with-inputs template)'),
-    org: z.string().optional().describe('Organization ID. If not provided, uses the default organization.'),
   };
   
   const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       // Access headers from the shared context
       const {url, credential, organization} = getExchangeParams(params, context);
-      let serviceDefinition = params.serviceDefinition;
+      let serviceDefinition;
       
+      // Process the serviceDefinition parameter
+      if (params.serviceDefinition) {
+        console.log('Original serviceDefinition:', typeof params.serviceDefinition);
+        
+        // Check if serviceDefinition is a string (JSON string) or an object
+        if (typeof params.serviceDefinition === 'string') {
+          try {
+            serviceDefinition = JSON.parse(params.serviceDefinition);
+            console.log('Parsed from JSON string');
+          } catch (parseError) {
+            console.log('Parsing error:', parseError);
+            
+            // Try handling escaped JSON strings
+            try {
+              const unescapedString = params.serviceDefinition.replace(/\\"/g, '"');
+              serviceDefinition = JSON.parse(unescapedString);
+              console.log('Parsed after unescaping quotes');
+            } catch (unescapeError) {
+              console.log('Unescaping quotes failed:', unescapeError);
+              
+              // If that also fails, try removing outer quotes and then parsing
+              const trimmedString = params.serviceDefinition.trim();
+              
+              if (
+                (trimmedString.startsWith('"') && trimmedString.endsWith('"')) ||
+                (trimmedString.startsWith("'") && trimmedString.endsWith("'")) ||
+                (trimmedString.startsWith('`') && trimmedString.endsWith('`'))
+              ) {
+                const innerString = trimmedString.substring(1, trimmedString.length - 1);
+                
+                try {
+                  serviceDefinition = JSON.parse(innerString);
+                  console.log('Parsed after removing outer quotes');
+                } catch (innerParseError) {
+                  console.log('Parsing after removing outer quotes failed:', innerParseError);
+                  return getErrorMessage(`Invalid serviceDefinition: Not a valid JSON string`);
+                }
+              } else {
+                return getErrorMessage(`Invalid serviceDefinition: Not a valid JSON string`);
+              }
+            }
+          }
+        } else {
+          // It's already an object
+          serviceDefinition = params.serviceDefinition;
+          console.log('Using object directly');
+        }
+      }
       // If a complete service definition is not provided, build one from template
-      if (!serviceDefinition) {
+      else {
         if (!params.templateType) {
           return getErrorMessage("Either serviceDefinition or templateType must be provided");
         }
@@ -93,24 +145,24 @@ export function registerPublishServiceTool(server: McpServer) {
         const appPort = params.appPort || '3000';
         
         templateContent = templateContent
-          .replace(/\\$HZN_ORG_ID/g, organization)
-          .replace(/\\$SERVICE_NAME/g, params.serviceName)
-          .replace(/\\$SERVICE_VERSION/g, params.serviceVersion)
-          .replace(/\\$SERVICE_CONTAINER/g, params.serviceContainer)
-          .replace(/\\$ARCH/g, arch)
-          .replace(/\\$VOLUME_MOUNT/g, volumeMount)
-          .replace(/\\$MMS_SHARED_VOLUME/g, params.mmsVolume || 'mms_shared_volume')
-          .replace(/\\$EXPOSE_PORT/g, exposePort)
-          .replace(/\\$APP_PORT/g, appPort);
+          .replace(/\$HZN_ORG_ID/g, organization)
+          .replace(/\$SERVICE_NAME/g, params.serviceName)
+          .replace(/\$SERVICE_VERSION/g, params.serviceVersion)
+          .replace(/\$SERVICE_CONTAINER/g, params.serviceContainer)
+          .replace(/\$ARCH/g, arch)
+          .replace(/\$VOLUME_MOUNT/g, volumeMount)
+          .replace(/\$MMS_SHARED_VOLUME/g, params.mmsVolume || 'mms_shared_volume')
+          .replace(/\$EXPOSE_PORT/g, exposePort)
+          .replace(/\$APP_PORT/g, appPort);
         
         // Additional replacements for with-inputs template
         if (params.templateType === 'with-inputs') {
           templateContent = templateContent
-            .replace(/\\$MMS_SERVICE_NAME/g, params.serviceName)
-            .replace(/\\$MMS_SERVICE_VERSION/g, params.serviceVersion)
-            .replace(/\\$MMS_CONTAINER/g, params.serviceContainer)
-            .replace(/\\$MMS_OBJECT_TYPE/g, params.mmsObjectType || 'mms_agent_config')
-            .replace(/\\$UPDATE_FILE_NAME/g, params.updateFileName || 'mms-agent-config.json');
+            .replace(/\$MMS_SERVICE_NAME/g, params.serviceName)
+            .replace(/\$MMS_SERVICE_VERSION/g, params.serviceVersion)
+            .replace(/\$MMS_CONTAINER/g, params.serviceContainer)
+            .replace(/\$MMS_OBJECT_TYPE/g, params.mmsObjectType || 'mms_agent_config')
+            .replace(/\$UPDATE_FILE_NAME/g, params.updateFileName || 'mms-agent-config.json');
         }
         
         // Parse the template into a JSON object
@@ -124,6 +176,14 @@ export function registerPublishServiceTool(server: McpServer) {
       // Publish the service to the Exchange
       const serviceUrl = `${url}/${organization}/services/${serviceDefinition.url}_${serviceDefinition.version}_${serviceDefinition.arch}`;
       console.log(`Publishing service to Exchange at ${serviceUrl}`);
+      console.log('Service definition:', JSON.stringify(serviceDefinition, null, 2));
+      
+      // Convert deployment field to a string if it's an object
+      // This is required by the Open Horizon Exchange API
+      if (serviceDefinition.deployment && typeof serviceDefinition.deployment === 'object') {
+        serviceDefinition.deployment = JSON.stringify(serviceDefinition.deployment);
+        console.log('Converted deployment to string:', serviceDefinition.deployment);
+      }
       
       const response = await makePostRequest(serviceUrl, serviceDefinition, {
         Authorization: `Basic ${credential}`
