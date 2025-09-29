@@ -42,7 +42,8 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
     - mmsObjectType: MMS object type (for with-inputs template)
     - mmsVolume: MMS volume (for with-inputs template)
     - updateFileName: Update file name (for with-inputs template)
-    - outputPath: Path to save the generated file (default: current directory)
+    - outputPath: Path to save the generated file (optional)
+    - saveToFile: Whether to save the generated definition to a file (default: false)
     
     Config file options:
     - configPath: Path to a .env-config.json or .env-config-with-inputs.json file
@@ -63,7 +64,8 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
     mmsObjectType: z.string().optional().describe('The MMS object type (for with-inputs template)'),
     mmsVolume: z.string().optional().describe('The MMS volume (for with-inputs template)'),
     updateFileName: z.string().optional().describe('The update file name (for with-inputs template)'),
-    outputPath: z.string().optional().describe('Path to save the generated file (default: current directory)'),
+    outputPath: z.string().optional().describe('Path to save the generated file (optional)'),
+    saveToFile: z.boolean().optional().describe('Whether to save the generated definition to a file (default: false)'),
     configPath: z.string().optional().describe('Path to a .env-config.json or .env-config-with-inputs.json file'),
     config: z.any().optional().describe('JSON object with configuration parameters'),
   };
@@ -166,24 +168,24 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
       
       // Replace variables in the template
       templateContent = templateContent
-        .replace(/\\$HZN_ORG_ID/g, configData.HZN_ORG_ID)
-        .replace(/\\$SERVICE_NAME/g, configData.SERVICE_NAME)
-        .replace(/\\$SERVICE_VERSION/g, configData.SERVICE_VERSION)
-        .replace(/\\$SERVICE_CONTAINER/g, configData.SERVICE_CONTAINER)
-        .replace(/\\$ARCH/g, configData.ARCH)
-        .replace(/\\$VOLUME_MOUNT/g, configData.VOLUME_MOUNT)
-        .replace(/\\$SHARED_VOLUME/g, configData.SHARED_VOLUME)
-        .replace(/\\$EXPOSE_PORT/g, configData.EXPOSE_PORT)
-        .replace(/\\$APP_PORT/g, configData.APP_PORT);
+        .replace(/\$HZN_ORG_ID/g, configData.HZN_ORG_ID)
+        .replace(/\$SERVICE_NAME/g, configData.SERVICE_NAME)
+        .replace(/\$SERVICE_VERSION/g, configData.SERVICE_VERSION)
+        .replace(/\$SERVICE_CONTAINER/g, configData.SERVICE_CONTAINER)
+        .replace(/\$ARCH/g, configData.ARCH)
+        .replace(/\$VOLUME_MOUNT/g, configData.VOLUME_MOUNT)
+        .replace(/\$MMS_SHARED_VOLUME/g, configData.SHARED_VOLUME)
+        .replace(/\$EXPOSE_PORT/g, configData.EXPOSE_PORT)
+        .replace(/\$APP_PORT/g, configData.APP_PORT);
       
       // Additional replacements for with-inputs template
       if (serviceType === 'with-inputs') {
         templateContent = templateContent
-          .replace(/\\$MMS_SERVICE_NAME/g, configData.MMS_SERVICE_NAME || configData.SERVICE_NAME)
-          .replace(/\\$MMS_SERVICE_VERSION/g, configData.MMS_SERVICE_VERSION || configData.SERVICE_VERSION)
-          .replace(/\\$MMS_CONTAINER/g, configData.MMS_CONTAINER || configData.SERVICE_CONTAINER)
-          .replace(/\\$MMS_OBJECT_TYPE/g, configData.MMS_OBJECT_TYPE)
-          .replace(/\\$UPDATE_FILE_NAME/g, configData.MMS_UPDATE_FILE_NAME || configData.UPDATE_FILE_NAME);
+          .replace(/\$MMS_SERVICE_NAME/g, configData.MMS_SERVICE_NAME || configData.SERVICE_NAME)
+          .replace(/\$MMS_SERVICE_VERSION/g, configData.MMS_SERVICE_VERSION || configData.SERVICE_VERSION)
+          .replace(/\$MMS_CONTAINER/g, configData.MMS_CONTAINER || configData.SERVICE_CONTAINER)
+          .replace(/\$MMS_OBJECT_TYPE/g, configData.MMS_OBJECT_TYPE)
+          .replace(/\$UPDATE_FILE_NAME/g, configData.MMS_UPDATE_FILE_NAME || configData.UPDATE_FILE_NAME);
       }
       
       // Parse the template to validate it's valid JSON
@@ -202,19 +204,24 @@ export function registerGenerateServiceDefinitionTool(server: McpServer) {
       const outputDirectory = params.outputPath || '.';
       const outputFilePath = path.join(outputDirectory, fileName);
       
-      // Write the service definition to a file
-      try {
-        await fs.writeFile(outputFilePath, JSON.stringify(serviceDefinition, null, 2), 'utf8');
-      } catch (error) {
-        return getErrorMessage(`Error writing service definition file: ${error}`);
+      // Only save to file if explicitly requested
+      const saveToFile = params.saveToFile === true;
+      let fileMessage = '';
+      
+      if (saveToFile) {
+        try {
+          await fs.writeFile(outputFilePath, JSON.stringify(serviceDefinition, null, 2), 'utf8');
+          fileMessage = `Successfully generated service definition file: ${outputFilePath}\n\n`;
+        } catch (error) {
+          return getErrorMessage(`Error writing service definition file: ${error}`);
+        }
       }
       
       return {
         content: [
           {
             type: 'text',
-            text: `Successfully generated service definition file: ${outputFilePath}\n\n` +
-                  `Service Definition:\n${JSON.stringify(serviceDefinition, null, 2)}`
+            text: `${fileMessage}Service Definition:\n${JSON.stringify(serviceDefinition, null, 2)}`
           }
         ]
       };
