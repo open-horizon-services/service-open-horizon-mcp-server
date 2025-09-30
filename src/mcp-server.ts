@@ -19,6 +19,7 @@ import { registerDeletePolicyTool } from './tools/delete-policy';
 import { registerUnregisterNodeTool } from './tools/unregister-node';
 import { registerNodePolicyTool } from './tools/register-node-policy';
 import { registerGenerateServiceDefinitionTool } from './tools/generate-service-definition';
+import { registerApiQueryTool } from './tools/api-query-tool';
 
 /**
  * Factory to create and configure a new McpServer (tools/resources/prompts)
@@ -48,8 +49,12 @@ export function createMcpServer(requestContext: any): McpServer {
       - Unregistering nodes
       - Registering nodes with policies
       - Generating service definition files
+      - Answering questions about the Open Horizon API endpoints and usage
       
       Always provide clear and concise information about Open Horizon resources.
+      
+      When users ask questions about the API, use the api-query-tool to search the OpenAPI specification
+      and provide relevant information about endpoints, parameters, and usage examples.
     `
   });
   
@@ -68,6 +73,7 @@ export function createMcpServer(requestContext: any): McpServer {
   registerUnregisterNodeTool(server);
   registerNodePolicyTool(server);
   registerGenerateServiceDefinitionTool(server);
+  registerApiQueryTool(server);
 
   // Add a simple status resource
   server.resource('status', 'status', async () => {
