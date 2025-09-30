@@ -54,6 +54,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "compromise": "^14.14.4",
+    "compromise-sentences": "^0.3.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",

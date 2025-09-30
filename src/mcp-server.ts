@@ -20,6 +20,7 @@ import { registerUnregisterNodeTool } from './tools/unregister-node';
 import { registerNodePolicyTool } from './tools/register-node-policy';
 import { registerGenerateServiceDefinitionTool } from './tools/generate-service-definition';
 import { registerApiQueryTool } from './tools/api-query-tool';
+import { registerApiQueryToolNlp } from './tools/api-query-tool-nlp';
 
 /**
  * Factory to create and configure a new McpServer (tools/resources/prompts)
@@ -53,8 +54,12 @@ export function createMcpServer(requestContext: any): McpServer {
       
       Always provide clear and concise information about Open Horizon resources.
       
-      When users ask questions about the API, use the api-query-tool to search the OpenAPI specification
-      and provide relevant information about endpoints, parameters, and usage examples.
+      When users ask questions about the API, you have two tools available:
+      - api-query-tool: The standard tool that uses pattern matching to search the OpenAPI specification
+      - api-query-tool-nlp: An enhanced tool that uses natural language processing for more contextual understanding
+      
+      You can use either tool based on the query complexity. The NLP tool may provide better results for
+      complex or conversational queries, while the standard tool works well for direct keyword searches.
     `
   });
   
@@ -74,6 +79,7 @@ export function createMcpServer(requestContext: any): McpServer {
   registerNodePolicyTool(server);
   registerGenerateServiceDefinitionTool(server);
   registerApiQueryTool(server);
+  registerApiQueryToolNlp(server);
 
   // Add a simple status resource
   server.resource('status', 'status', async () => {
