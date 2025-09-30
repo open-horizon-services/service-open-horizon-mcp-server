@@ -178,11 +178,31 @@ export function registerPublishServiceTool(server: McpServer) {
       console.log(`Publishing service to Exchange at ${serviceUrl}`);
       console.log('Service definition:', JSON.stringify(serviceDefinition, null, 2));
       
+      // Fix Docker image URL format if needed
+      // Docker Hub images should not include "hub.docker.com/" prefix
+      if (serviceDefinition.deployment && typeof serviceDefinition.deployment === 'object') {
+        const services = serviceDefinition.deployment.services || {};
+        for (const serviceName in services) {
+          const service = services[serviceName];
+          if (service.image && service.image.startsWith('hub.docker.com/')) {
+            service.image = service.image.replace('hub.docker.com/', '');
+            console.log(`Fixed Docker image URL: ${service.image}`);
+          }
+        }
+      }
+      
       // Convert deployment field to a string if it's an object
       // This is required by the Open Horizon Exchange API
       if (serviceDefinition.deployment && typeof serviceDefinition.deployment === 'object') {
         serviceDefinition.deployment = JSON.stringify(serviceDefinition.deployment);
         console.log('Converted deployment to string:', serviceDefinition.deployment);
+      }
+      
+      // Remove the "org" field from the service definition
+      // The API doesn't expect this field in the request body
+      if ('org' in serviceDefinition) {
+        console.log('Removing "org" field from service definition');
+        delete serviceDefinition.org;
       }
       
       const response = await makePostRequest(serviceUrl, serviceDefinition, {

@@ -91,7 +91,18 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
     });
 
     if (!response.ok) {
-      return getErrorMessage(`Error posting data: ${response.status} ${response.statusText}`);
+      // Try to get more detailed error information
+      let errorDetail = '';
+      try {
+        const errorBody = await response.text();
+        console.log('Error response body:', errorBody);
+        errorDetail = errorBody ? `: ${errorBody}` : '';
+      } catch (textError) {
+        console.log('Could not read error response body:', textError);
+      }
+      
+      console.error(`Error response: ${response.status} ${response.statusText}${errorDetail}`);
+      return getErrorMessage(`Error posting data: ${response.status} ${response.statusText}${errorDetail}`);
     }
     return (await response.json()) as T;
 
