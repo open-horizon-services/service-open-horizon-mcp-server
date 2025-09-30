@@ -61,7 +61,7 @@ async function fetchOpenApiSpec(): Promise<any> {
  * @param query The original query string for pattern matching
  * @returns An array of matching endpoints with their details
  */
-function findMatchingEndpoints(spec: any, searchTerms: string[], query: string): any[] {
+export function findMatchingEndpoints(spec: any, searchTerms: string[], query: string): any[] {
   const results: any[] = [];
   const paths = spec.paths || {};
   
@@ -71,6 +71,20 @@ function findMatchingEndpoints(spec: any, searchTerms: string[], query: string):
   
   // Define patterns for common API operations
   const patterns = [
+    // Pattern for viewing organizations a user has access to
+    {
+      pattern: /(list|get|fetch|retrieve|view|see|show|display)\s+(my|user|accessible|available)\s*(organizations|orgs)/i,
+      method: 'post',
+      pathPattern: /\/v1\/myorgs$/,
+      priority: 150
+    },
+    // Pattern for questions about user organization access
+    {
+      pattern: /(what|which)\s+(organizations|orgs)\s+(can|do|does)\s+(i|user|one)\s+(have|has|access|view)/i,
+      method: 'post',
+      pathPattern: /\/v1\/myorgs$/,
+      priority: 150
+    },
     {
       pattern: /(get|query|fetch|retrieve)\s+(a|one|specific|single|details|information|about)\s+service/i,
       method: 'get',
@@ -254,6 +268,24 @@ function findMatchingEndpoints(spec: any, searchTerms: string[], query: string):
           if (path.includes('/hagroups/') ||
               (path.includes('/nodes/{node_id}/') && !path.endsWith('/nodes/{node_id}'))) {
             relevanceScore -= 150;
+          }
+        }
+        
+        // Special handling for organization access queries
+        if (normalizedQuery.includes('organization') ||
+            normalizedQuery.includes('organizations') ||
+            normalizedQuery.includes('org') ||
+            normalizedQuery.includes('orgs')) {
+          
+          // If the query is about user access to organizations
+          if ((normalizedQuery.includes('access') ||
+               normalizedQuery.includes('view') ||
+               normalizedQuery.includes('my') ||
+               normalizedQuery.includes('user')) &&
+              method === 'post' &&
+              path === '/v1/myorgs') {
+            
+            relevanceScore += 200; // Give high priority to the myorgs endpoint
           }
         }
         
@@ -802,6 +834,13 @@ export function registerApiQueryTool(server: McpServer) {
       }
       if (query.toLowerCase().includes('organization') || query.toLowerCase().includes('org')) {
         searchTerms.push('organization');
+      }
+      
+      // Add specific terms for organization access queries
+      if ((query.toLowerCase().includes('organization') || query.toLowerCase().includes('org')) &&
+          (query.toLowerCase().includes('access') || query.toLowerCase().includes('view') ||
+           query.toLowerCase().includes('my') || query.toLowerCase().includes('user'))) {
+        searchTerms.push('myorgs');
       }
       
       console.log('Search terms:', searchTerms);
