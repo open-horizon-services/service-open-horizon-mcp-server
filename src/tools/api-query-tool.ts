@@ -427,8 +427,35 @@ export function formatEndpointAsMarkdown(endpoint: any): string {
   
   // Add responses section with collapsible details
   if (endpoint.responses) {
+    // Add a summary of all response codes first
+    markdown += '### Response Codes\n\n';
+    markdown += '| Code | Description |\n';
+    markdown += '|------|-------------|\n';
+    
+    for (const statusCode in endpoint.responses) {
+      const response = endpoint.responses[statusCode];
+      const description = response.description || '';
+      
+      // Add status code badge with color based on code
+      let statusBadge = '';
+      if (statusCode.startsWith('2')) {
+        statusBadge = `🟢 \`${statusCode}\``;
+      } else if (statusCode.startsWith('4')) {
+        statusBadge = `🔶 \`${statusCode}\``;
+      } else if (statusCode.startsWith('5')) {
+        statusBadge = `🔴 \`${statusCode}\``;
+      } else {
+        statusBadge = `\`${statusCode}\``;
+      }
+      
+      markdown += `| ${statusBadge} | ${description} |\n`;
+    }
+    
+    markdown += '\n';
+    
+    // Detailed response information
     markdown += '<details>\n';
-    markdown += '<summary><strong>Responses</strong></summary>\n\n';
+    markdown += '<summary><strong>Response Details</strong></summary>\n\n';
     
     for (const statusCode in endpoint.responses) {
       const response = endpoint.responses[statusCode];
@@ -882,6 +909,34 @@ export function registerApiQueryTool(server: McpServer) {
         
         if (bestMatch.description) {
           responseText += `${bestMatch.description}\n\n`;
+        }
+        
+        // Add response codes summary
+        if (bestMatch.responses) {
+          responseText += '### Response Codes\n\n';
+          responseText += '| Code | Description |\n';
+          responseText += '|------|-------------|\n';
+          
+          for (const statusCode in bestMatch.responses) {
+            const response = bestMatch.responses[statusCode];
+            const description = response.description || '';
+            
+            // Add status code badge with color based on code
+            let statusBadge = '';
+            if (statusCode.startsWith('2')) {
+              statusBadge = `🟢 \`${statusCode}\``;
+            } else if (statusCode.startsWith('4')) {
+              statusBadge = `🔶 \`${statusCode}\``;
+            } else if (statusCode.startsWith('5')) {
+              statusBadge = `🔴 \`${statusCode}\``;
+            } else {
+              statusBadge = `\`${statusCode}\``;
+            }
+            
+            responseText += `| ${statusBadge} | ${description} |\n`;
+          }
+          
+          responseText += '\n';
         }
         
         // Add parameters section - focus on required parameters
