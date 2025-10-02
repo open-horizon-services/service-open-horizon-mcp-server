@@ -35,7 +35,7 @@ const resourceTypes = {
 // Define API actions and their related terms
 const apiActions = {
   get: ['get', 'fetch', 'retrieve', 'query', 'find', 'show', 'display', 'list', 'view', 'see'],
-  create: ['create', 'add', 'register', 'publish', 'make', 'define', 'insert'],
+  create: ['create', 'add', 'register', 'publish', 'make', 'define', 'insert', 'deploy'],
   update: ['update', 'modify', 'change', 'edit', 'alter', 'revise'],
   delete: ['delete', 'remove', 'unregister', 'unpublish', 'destroy']
 };
@@ -174,7 +174,8 @@ export function analyzeQuery(query: string): any {
   }
   
   if (lowerQuery.includes('create') || lowerQuery.includes('add') ||
-      lowerQuery.includes('register') || lowerQuery.includes('make')) {
+      lowerQuery.includes('register') || lowerQuery.includes('make') ||
+      lowerQuery.includes('publish')) {
     result.actions.push('create');
   }
   
@@ -325,6 +326,15 @@ export function findMatchingEndpoints(spec: any, analysis: any): any[] {
           // "How do I register a node?"
           if (path === '/orgs/{org}/nodes' && method === 'post') {
             relevanceScore += 50;
+          }
+        }
+        
+        // Special handling for publishing/creating services
+        if ((analysis.actions.includes('create') || analysis.actions.includes('publish')) &&
+            analysis.resources.includes('service')) {
+          // "How do I publish a service?"
+          if (path === '/orgs/{org}/services' && method === 'post') {
+            relevanceScore += 100;
           }
         }
         
@@ -936,7 +946,5 @@ export function registerApiQueryToolNlp(server: McpServer) {
     toolCallback
   );
 }
-
-// Made with Bob
 
 // Made with Bob
