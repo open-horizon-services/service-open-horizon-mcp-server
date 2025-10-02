@@ -6,7 +6,15 @@
 
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { makeHttpRequest, makePostRequest, getErrorMessage, getExchangeParams } from '../services/common';
+import {
+  makeHttpRequest,
+  makePostRequest,
+  getErrorMessage,
+  getExchangeParams,
+  addDeploymentSignatureFromKey,
+  generateDeploymentSignatureFromKey,
+  signServiceDefinition
+} from '../services/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -205,7 +213,12 @@ export function registerPublishServiceTool(server: McpServer) {
         delete serviceDefinition.org;
       }
       
-      const response = await makePostRequest(serviceUrl, serviceDefinition, {
+      // Sign the service definition using the environment variable private key
+      // This will work in CodeEngine and other environments where the PRIVATE_KEY env var is set
+      const signedServiceDefinition = signServiceDefinition(serviceDefinition);
+      console.log('Service definition signed:', signedServiceDefinition.deploymentSignature ? 'Yes' : 'No');
+      
+      const response = await makePostRequest(serviceUrl, signedServiceDefinition, {
         Authorization: `Basic ${credential}`
       }, 'PUT');
       

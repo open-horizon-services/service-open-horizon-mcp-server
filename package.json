@@ -37,6 +37,7 @@
     "select-project": "ibmcloud ce project select -n mcp-demo",
     "select-target": "ibmcloud target -g Default",
     "code-engine": "bin/deploy.js",
+    "gen-private-key-base64": "cat .env-private-key | base64 -w 0 > .env-private-key-base64",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
