@@ -1,208 +1,106 @@
 /**
- * Test script for the fixed publish-service.ts
- * 
- * This script tests the exact error scenario that was reported
+ * Test script for the publish-service tool with image digest handling
  */
 
-// Mock the necessary objects and functions
-const mockContext = {
-  requestInfo: {
-    headers: {
-      'exchange-url': 'https://example.com/api',
-      'exchange-credential': 'base64credential',
-      'exchange-org': 'test-org'
-    }
-  }
+// Mock the common service functions
+const mockCommon = {
+  makeHttpRequest: jest.fn(),
+  makePostRequest: jest.fn(),
+  getErrorMessage: jest.fn(error => ({ content: [{ type: 'text', text: `Error: ${error}` }] })),
+  getExchangeParams: jest.fn(() => ({
+    url: 'http://open-horizon-3.lfedge.iol.unh.edu:3091/v1',
+    credential: 'base64-encoded-creds',
+    organization: 'playground'
+  })),
+  addDeploymentSignatureFromKey: jest.fn(def => def),
+  generateDeploymentSignatureFromKey: jest.fn(() => 'mock-signature'),
+  signServiceDefinition: jest.fn(def => {
+    def.deploymentSignature = 'placeholder_signature';
+    return def;
+  })
 };
 
-// Mock the getExchangeParams function
-const getExchangeParams = (params, context) => {
-  return {
-    url: context.requestInfo.headers['exchange-url'],
-    credential: context.requestInfo.headers['exchange-credential'],
-    organization: params.org || context.requestInfo.headers['exchange-org']
-  };
+// Mock the fs/promises module
+const mockFs = {
+  readFile: jest.fn()
 };
 
-// Mock the makePostRequest function
-const makePostRequest = async (url, data, headers, method) => {
-  console.log(`[MOCK] Making ${method} request to ${url}`);
-  console.log(`[MOCK] Headers:`, headers);
-  console.log(`[MOCK] Data:`, JSON.stringify(data, null, 2));
+// Mock the path module
+const mockPath = {
+  join: jest.fn((dir, ...paths) => paths.join('/'))
+};
+
+// Mock the modules
+jest.mock('../src/services/common', () => mockCommon);
+jest.mock('fs/promises', () => mockFs);
+jest.mock('path', () => mockPath);
+
+// Import the module under test
+const { registerPublishServiceTool } = require('../src/tools/publish-service');
+
+// Create a mock MCP server
+const mockServer = {
+  tool: jest.fn()
+};
+
+// Test function
+async function runTests() {
+  console.log('Registering publish-service tool...');
+  registerPublishServiceTool(mockServer);
   
-  // Check if deployment is a string
-  if (data.deployment && typeof data.deployment === 'string') {
-    console.log('[SUCCESS] deployment is correctly formatted as a string');
-  } else {
-    console.log('[ERROR] deployment is not a string:', typeof data.deployment);
-  }
+  // Extract the callback function registered with the server
+  const toolCallback = mockServer.tool.mock.calls[0][3];
   
-  return { status: 200 };
-};
-
-// Mock the getErrorMessage function
-const getErrorMessage = (error) => {
-  return {
-    content: [
-      {
-        type: 'text',
-        text: `Error: ${error}`
-      }
-    ]
-  };
-};
-
-// Import the function from publish-service.ts (simulated here)
-async function simulatePublishService(params, context) {
-  try {
-    // Access headers from the shared context
-    const {url, credential, organization} = getExchangeParams(params, context);
-    let serviceDefinition;
-    
-    // Process the serviceDefinition parameter
-    if (params.serviceDefinition) {
-      console.log('Original serviceDefinition:', typeof params.serviceDefinition);
-      
-      // Check if serviceDefinition is a string (JSON string) or an object
-      if (typeof params.serviceDefinition === 'string') {
-        try {
-          serviceDefinition = JSON.parse(params.serviceDefinition);
-          console.log('Parsed from JSON string');
-        } catch (parseError) {
-          console.log('Parsing error:', parseError);
-          
-          // Try handling escaped JSON strings
-          try {
-            const unescapedString = params.serviceDefinition.replace(/\\"/g, '"');
-            serviceDefinition = JSON.parse(unescapedString);
-            console.log('Parsed after unescaping quotes');
-          } catch (unescapeError) {
-            console.log('Unescaping quotes failed:', unescapeError);
-            
-            // If that also fails, try removing outer quotes and then parsing
-            const trimmedString = params.serviceDefinition.trim();
-            
-            if (
-              (trimmedString.startsWith('"') && trimmedString.endsWith('"')) ||
-              (trimmedString.startsWith("'") && trimmedString.endsWith("'")) ||
-              (trimmedString.startsWith('`') && trimmedString.endsWith('`'))
-            ) {
-              const innerString = trimmedString.substring(1, trimmedString.length - 1);
-              
-              try {
-                serviceDefinition = JSON.parse(innerString);
-                console.log('Parsed after removing outer quotes');
-              } catch (innerParseError) {
-                console.log('Parsing after removing outer quotes failed:', innerParseError);
-                return getErrorMessage(`Invalid serviceDefinition: Not a valid JSON string`);
-              }
-            } else {
-              return getErrorMessage(`Invalid serviceDefinition: Not a valid JSON string`);
-            }
-          }
-        }
-      } else {
-        // It's already an object
-        serviceDefinition = params.serviceDefinition;
-        console.log('Using object directly');
-      }
-    } else {
-      return getErrorMessage("serviceDefinition is required");
-    }
-    
-    // Publish the service to the Exchange
-    const serviceUrl = `${url}/${organization}/services/${serviceDefinition.url}_${serviceDefinition.version}_${serviceDefinition.arch}`;
-    console.log(`Publishing service to Exchange at ${serviceUrl}`);
-    console.log('Service definition:', JSON.stringify(serviceDefinition, null, 2));
-    
-    // Fix Docker image URL format if needed
-    // Docker Hub images should not include "hub.docker.com/" prefix
-    if (serviceDefinition.deployment && typeof serviceDefinition.deployment === 'object') {
-      const services = serviceDefinition.deployment.services || {};
-      for (const serviceName in services) {
-        const service = services[serviceName];
-        if (service.image && service.image.startsWith('hub.docker.com/')) {
-          service.image = service.image.replace('hub.docker.com/', '');
-          console.log(`Fixed Docker image URL: ${service.image}`);
+  // Test case 1: Service with digest in image URL
+  console.log('\n--- Test Case 1: Service with digest in image URL ---');
+  
+  // Mock the HTTP response
+  mockCommon.makePostRequest.mockResolvedValueOnce({
+    status: 201,
+    data: { msg: 'Service created/updated' }
+  });
+  
+  // Create a test service definition with a digest in the image URL
+  const serviceDefinition = {
+    label: 'web-hello-python for amd64',
+    description: 'A simple HTTP service to respond with a custom hello greeting in HTML format',
+    public: true,
+    documentation: 'https://github.com/open-horizon-services/web-helloworld-python/blob/main/README.md',
+    url: 'web-hello-python',
+    version: '1.0.0',
+    arch: 'amd64',
+    sharable: 'singleton',
+    requiredServices: [],
+    userInput: [],
+    deployment: JSON.stringify({
+      services: {
+        'web-hello-python': {
+          image: 'joewxboy/web-hello-python@sha256:4726debe35c1179de5739cbeb2abdabb26212dad5df8b0350db05bf9f3fe4d3d',
+          binds: ['mms_shared_volume:/mms-shared:rw', '/var/run/docker.sock:/var/run/docker.sock'],
+          ports: [{ HostIP: '0.0.0.0', HostPort: '8000:8000/tcp' }],
+          privileged: true
         }
       }
-    }
-    
-    // Convert deployment field to a string if it's an object
-    // This is required by the Open Horizon Exchange API
-    if (serviceDefinition.deployment && typeof serviceDefinition.deployment === 'object') {
-      serviceDefinition.deployment = JSON.stringify(serviceDefinition.deployment);
-      console.log('Converted deployment to string:', serviceDefinition.deployment);
-    }
-    
-    // Remove the "org" field from the service definition
-    // The API doesn't expect this field in the request body
-    if ('org' in serviceDefinition) {
-      console.log('Removing "org" field from service definition');
-      delete serviceDefinition.org;
-    }
-    
-    const response = await makePostRequest(serviceUrl, serviceDefinition, {
-      Authorization: `Basic ${credential}`
-    }, 'PUT');
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Successfully published service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} to organization ${organization}.`
-        }
-      ]
-    };
-  } catch (error) {
-    console.error(`Error publishing service: ${error}`);
-    return getErrorMessage(error);
-  }
-}
-
-// Test the error scenario
-async function testErrorScenario() {
-  console.log('=== Testing the fixed publish-service with the error scenario ===');
-  
-  // This is the exact service definition that caused the error
-  const errorScenario = {
-    org: 'playground',
-    serviceDefinition: `{
-  \"org\": \"playground\",
-  \"label\": \"chunk-saved-model-service for amd64\",
-  \"url\": \"chunk-saved-model-service\",
-  \"version\": \"1.0.0\",
-  \"arch\": \"amd64\",
-  \"public\": true,
-  \"sharable\": \"singleton\",
-  \"requiredServices\": [],
-  \"userInput\": [],
-  \"deployment\": {
-    \"services\": {
-      \"chunk-saved-model-service\": {
-        \"image\": \"hub.docker.com/playbox21/chunk-saved-model-service_amd64:1.0.0\",
-        \"binds\": [
-          \"mms_shared_volume:/mms-shared:rw\",
-          \"/var/run/docker.sock:/var/run/docker.sock\"
-        ],
-        \"ports\": [
-          {
-            \"HostIP\": \"0.0.0.0\",
-            \"HostPort\": \"3002:3000/tcp\"
-          }
-        ],
-        \"privileged\": true
-      }
-    }
-  }
-}`
+    }),
+    deploymentSignature: 'placeholder_signature'
   };
   
-  const result = await simulatePublishService(errorScenario, mockContext);
+  // Call the tool callback with the service definition
+  const result = await toolCallback({ serviceDefinition });
+  
+  // Check the result
   console.log('Result:', result);
+  
+  // Check if the service URL was updated correctly
+  console.log('Service URL used in API call:', mockCommon.makePostRequest.mock.calls[0][0]);
+  console.log('Service definition sent to API:', mockCommon.makePostRequest.mock.calls[0][1]);
+  
+  console.log('\nTests completed');
 }
 
-// Run the test
-testErrorScenario().catch(console.error);
+// Run the tests
+runTests().catch(error => {
+  console.error('Test error:', error);
+});
 
 // Made with Bob
