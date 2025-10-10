@@ -15,7 +15,6 @@ const PRIVATE_KEY = PRIVATE_KEY_BASE64
   : '';
 
 console.log('Private key loaded:', PRIVATE_KEY ? 'Yes' : 'No');
-console.log(PRIVATE_KEY);
 
 export function getExchangeParams(params: any, context: any): {url: string, credential: string, organization: string} {
   // Access headers from the shared context

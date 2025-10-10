@@ -149,6 +149,13 @@ export function findMatchingEndpoints(spec: any, searchTerms: string[], query: s
       method: 'get',
       pathPattern: /^\/orgs\/\{org\}\/services\/\{service\}$/,
       priority: 200  // Higher priority for the main service endpoint
+    },
+    // Pattern for updating node policy
+    {
+      pattern: /(update|modify|change|edit)\s+(a|one|specific|single)?\s*(node|device)\s+(policy|policies)/i,
+      method: 'put',
+      pathPattern: /\/orgs\/\{org\}\/nodes\/\{node_id\}\/policy$/,
+      priority: 200
     }
   ];
   
@@ -780,9 +787,11 @@ export function registerApiQueryTool(server: McpServer) {
     - How do I delete a specific service?
     - How do I query a single node?
     
+    NOTE: For complex queries like "how to update node policy?" or conversational queries,
+    please use the api-query-tool-nlp tool instead, which provides better natural language understanding.
+    
     The tool will search the OpenAPI specification and return relevant information about matching endpoints,
-    including parameters, request bodies, responses, and usage examples. It can understand natural language
-    queries and find the most appropriate API endpoints for your needs.
+    including parameters, request bodies, responses, and usage examples.
   `;
   const toolSchema = {
     query: z.string().describe('The question or search query about the Open Horizon API'),
@@ -927,6 +936,67 @@ export function registerApiQueryTool(server: McpServer) {
               break;
             }
           }
+        }
+      }
+      
+      // Special handling for node policy updates
+      if (query.toLowerCase().includes('update') &&
+          query.toLowerCase().includes('node') &&
+          query.toLowerCase().includes('policy')) {
+        
+        // Look for the node policy update endpoint
+        const nodePolicyEndpoint = matchingEndpoints.find(
+          endpoint => endpoint.method === 'PUT' && endpoint.path === '/orgs/{org}/nodes/{node_id}/policy'
+        );
+        
+        if (nodePolicyEndpoint) {
+          // Add example request body for node policy update
+          nodePolicyEndpoint.requestBodyExample = {
+            "label": "human readable name of the node policy",
+            "description": "policy description",
+            "properties": [
+              {
+                "name": "openhorizon.allowPrivileged",
+                "value": true
+              },
+              {
+                "name": "openhorizon.hardwareId",
+                "value": "4ea90cdebb3407fb30914e9068cc999db5f08a00"
+              },
+              {
+                "name": "openhorizon.containerized",
+                "value": true
+              },
+              {
+                "name": "openhorizon.cpu",
+                "value": 2
+              },
+              {
+                "name": "openhorizon.arch",
+                "value": "amd64"
+              },
+              {
+                "name": "openhorizon.memory",
+                "value": 3911
+              }
+            ],
+            "constraints": [],
+            "deployment": {
+              "properties": [
+                {"name": "mms-agent", "value": "MMS Agent"},
+                {"name": "worker-safety", "value": "Worker Safety"},
+                {"name": "policy-editor", "value": "Policy Editor"}
+              ],
+              "constraints": []
+            },
+            "management": {
+              "properties": [],
+              "constraints": []
+            }
+          };
+          
+          // Make this the best match
+          bestMatch = nodePolicyEndpoint;
         }
       }
       

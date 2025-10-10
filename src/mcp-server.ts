@@ -18,6 +18,7 @@ import { registerDeleteServiceTool } from './tools/delete-service';
 import { registerDeletePolicyTool } from './tools/delete-policy';
 import { registerUnregisterNodeTool } from './tools/unregister-node';
 import { registerNodePolicyTool } from './tools/register-node-policy';
+import { registerUpdateNodePolicyTool } from './tools/update-node-policy';
 import { registerGenerateServiceDefinitionTool } from './tools/generate-service-definition';
 import { registerApiQueryTool } from './tools/api-query-tool';
 import { registerApiQueryToolNlp } from './tools/api-query-tool-nlp';
@@ -58,8 +59,13 @@ export function createMcpServer(requestContext: any): McpServer {
       - api-query-tool: The standard tool that uses pattern matching to search the OpenAPI specification
       - api-query-tool-nlp: An enhanced tool that uses natural language processing for more contextual understanding
       
-      You can use either tool based on the query complexity. The NLP tool may provide better results for
-      complex or conversational queries, while the standard tool works well for direct keyword searches.
+      IMPORTANT: Always use api-query-tool-nlp for the following types of queries:
+      - Questions about updating node policies (e.g., "how to update node policy?")
+      - Complex or conversational API queries
+      - Questions that don't match exact API endpoint patterns
+      - When users ask "how to" questions about API usage
+      
+      Use api-query-tool only for simple, direct keyword searches when the query exactly matches API endpoint patterns.
     `
   });
   
@@ -77,6 +83,7 @@ export function createMcpServer(requestContext: any): McpServer {
   registerDeletePolicyTool(server);
   registerUnregisterNodeTool(server);
   registerNodePolicyTool(server);
+  registerUpdateNodePolicyTool(server);
   registerGenerateServiceDefinitionTool(server);
   registerApiQueryTool(server);
   registerApiQueryToolNlp(server);
