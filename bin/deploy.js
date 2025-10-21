@@ -119,12 +119,15 @@ let build = {
     if(pEnv.REGISTRY_ACCESS_SECRET) {
       arg += ` --registry-secret ${pEnv.REGISTRY_ACCESS_SECRET}`;
     }
-    console.log(arg);
     Object.keys(pEnv).forEach((key) => {
       if(key != 'REGISTRY_ACCESS_SECRET') {
         arg += ` --env ${key}=${pEnv[key]}`
       }
     })
+    if(pEnv.length == 0 && ceAccess[env]?.PRIVATE_KEY) {
+      arg += ` --env PRIVATE_KEY=${ceAccess[env].PRIVATE_KEY}`;
+    }
+    //console.log(arg);
     //arg += ` --env bucket=${pEnv.bucket} --env HZN_ORG_ID=${pEnv.HZN_ORG_ID}`;
     //arg += ` --env HZN_EXCHANGE_USER_AUTH=${pEnv.HZN_EXCHANGE_USER_AUTH} --env HZN_FSS_CSSURL=${pEnv.HZN_FSS_CSSURL}`;
     //arg += ` --env HZN_EXCHANGE_URL=${pEnv.HZN_EXCHANGE_URL}`;

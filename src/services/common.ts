@@ -1,9 +1,20 @@
 import { ToolResponse } from "../models/model";
 import 'dotenv/config';
+import * as crypto from 'crypto';
+import * as fs from 'fs/promises';
 
 const EXCHANGE_URL = process.env.EXCHANGE_URL || '';
 const EXCHANGE_ORG = process.env.EXCHANGE_ORG || '';
 const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
+
+// Handle base64-encoded private key
+// PRIVATE_KEY is already base64 encoded in .env
+const PRIVATE_KEY_BASE64 = process.env.PRIVATE_KEY || '';
+const PRIVATE_KEY = PRIVATE_KEY_BASE64
+  ? Buffer.from(PRIVATE_KEY_BASE64, 'base64').toString()
+  : '';
+
+console.log('Private key loaded:', PRIVATE_KEY ? 'Yes' : 'No');
 
 export function getExchangeParams(params: any, context: any): {url: string, credential: string, organization: string} {
   // Access headers from the shared context
@@ -91,7 +102,18 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
     });
 
     if (!response.ok) {
-      return getErrorMessage(`Error posting data: ${response.status} ${response.statusText}`);
+      // Try to get more detailed error information
+      let errorDetail = '';
+      try {
+        const errorBody = await response.text();
+        console.log('Error response body:', errorBody);
+        errorDetail = errorBody ? `: ${errorBody}` : '';
+      } catch (textError) {
+        console.log('Could not read error response body:', textError);
+      }
+      
+      console.error(`Error response: ${response.status} ${response.statusText}${errorDetail}`);
+      return getErrorMessage(`Error posting data: ${response.status} ${response.statusText}${errorDetail}`);
     }
     return (await response.json()) as T;
 
@@ -133,6 +155,270 @@ export async function makeDeleteRequest<T = any>(url: string, headers: Record<st
   } catch (err: any) {
     console.log(`Error making DELETE request to ${url}:`, err);
     return getErrorMessage(`Error deleting resource: ${err.message || "Unknown error"}`);
+  }
+}
+
+/**
+ * Adds a deployment signature to a service definition
+ * This is used when publishing a service to the Open Horizon Exchange
+ *
+ * @param serviceDefinition The service definition object
+ * @param privateKeyPath Path to the private key file
+ * @returns Promise resolving to the service definition with signature added
+ */
+export async function addDeploymentSignature(
+  serviceDefinition: any,
+  privateKeyPath: string
+): Promise<any> {
+  try {
+    // Make a copy of the service definition
+    const signedServiceDefinition = { ...serviceDefinition };
+    
+    // Extract the deployment field
+    let deployment = signedServiceDefinition.deployment;
+    
+    // If deployment is a string, parse it to an object
+    if (typeof deployment === 'string') {
+      deployment = JSON.parse(deployment);
+    }
+    
+    // Generate the signature for the deployment
+    const signature = await generateDeploymentSignature(deployment, privateKeyPath);
+    
+    // Add the signature to the service definition
+    signedServiceDefinition.deploymentSignature = signature;
+    
+    return signedServiceDefinition;
+  } catch (error) {
+    console.error('Error adding deployment signature:', error);
+    throw error;
+  }
+}
+
+/**
+ * Adds a deployment signature to a service definition using a private key string
+ *
+ * @param serviceDefinition The service definition object
+ * @param privateKey The private key as a string
+ * @returns The service definition with signature added
+ */
+export function addDeploymentSignatureFromKey(
+  serviceDefinition: any,
+  privateKey: string
+): any {
+  try {
+    // Make a copy of the service definition
+    const signedServiceDefinition = { ...serviceDefinition };
+    
+    // Extract the deployment field
+    let deployment = signedServiceDefinition.deployment;
+    
+    // If deployment is a string, parse it to an object
+    if (typeof deployment === 'string') {
+      deployment = JSON.parse(deployment);
+    }
+    
+    // Generate the signature for the deployment
+    const signature = generateDeploymentSignatureFromKey(deployment, privateKey);
+    
+    // Add the signature to the service definition
+    signedServiceDefinition.deploymentSignature = signature;
+    
+    return signedServiceDefinition;
+  } catch (error) {
+    console.error('Error adding deployment signature from key:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generates a deployment signature for an Open Horizon service definition
+ * This mimics the functionality of the `hzn util sign` command
+ *
+ * @param deployment The deployment object or string to sign
+ * @param privateKeyPath Path to the private key file
+ * @returns Promise resolving to the signature
+ */
+export async function generateDeploymentSignature(
+  deployment: object | string,
+  privateKeyPath: string
+): Promise<string> {
+  try {
+    // If deployment is an object, convert it to a string
+    const deploymentStr = typeof deployment === 'object'
+      ? JSON.stringify(deployment)
+      : deployment;
+    
+    // Read the private key
+    const privateKey = await fs.readFile(privateKeyPath, 'utf8');
+    
+    // Create a sign object
+    const sign = crypto.createSign('SHA256');
+    
+    // Update with the deployment string
+    sign.update(deploymentStr);
+    
+    // Sign the data
+    const signature = sign.sign(privateKey, 'base64');
+    
+    return signature;
+  } catch (error) {
+    console.error('Error generating deployment signature:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verifies a deployment signature
+ *
+ * @param deployment The deployment object or string that was signed
+ * @param signature The signature to verify
+ * @param publicKeyPath Path to the public key file
+ * @returns Promise resolving to a boolean indicating if the signature is valid
+ */
+export async function verifyDeploymentSignature(
+  deployment: object | string,
+  signature: string,
+  publicKeyPath: string
+): Promise<boolean> {
+  try {
+    // If deployment is an object, convert it to a string
+    const deploymentStr = typeof deployment === 'object'
+      ? JSON.stringify(deployment)
+      : deployment;
+    
+    // Read the public key
+    const publicKey = await fs.readFile(publicKeyPath, 'utf8');
+    
+    // Create a verify object
+    const verify = crypto.createVerify('SHA256');
+    
+    // Update with the deployment string
+    verify.update(deploymentStr);
+    
+    // Verify the signature
+    return verify.verify(publicKey, signature, 'base64');
+  } catch (error) {
+    console.error('Error verifying deployment signature:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generates a deployment signature using a private key string instead of a file path
+ *
+ * @param deployment The deployment object or string to sign
+ * @param privateKey The private key as a string
+ * @returns The signature
+ */
+export function generateDeploymentSignatureFromKey(
+  deployment: object | string,
+  privateKey: string
+): string {
+  try {
+    // If deployment is an object, convert it to a string
+    const deploymentStr = typeof deployment === 'object'
+      ? JSON.stringify(deployment)
+      : deployment;
+    
+    // Create a sign object
+    const sign = crypto.createSign('SHA256');
+    
+    // Update with the deployment string
+    sign.update(deploymentStr);
+    
+    // Sign the data
+    const signature = sign.sign(privateKey, 'base64');
+    
+    return signature;
+  } catch (error) {
+    console.error('Error generating deployment signature from key:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verifies a deployment signature using a public key string instead of a file path
+ *
+ * @param deployment The deployment object or string that was signed
+ * @param signature The signature to verify
+ * @param publicKey The public key as a string
+ * @returns Boolean indicating if the signature is valid
+ */
+export function verifyDeploymentSignatureFromKey(
+  deployment: object | string,
+  signature: string,
+  publicKey: string
+): boolean {
+  try {
+    // If deployment is an object, convert it to a string
+    const deploymentStr = typeof deployment === 'object'
+      ? JSON.stringify(deployment)
+      : deployment;
+    
+    // Create a verify object
+    const verify = crypto.createVerify('SHA256');
+    
+    // Update with the deployment string
+    verify.update(deploymentStr);
+    
+    // Verify the signature
+    return verify.verify(publicKey, signature, 'base64');
+  } catch (error) {
+    console.error('Error verifying deployment signature from key:', error);
+    throw error;
+  }
+}
+
+/**
+ * Signs a service definition using the private key from environment variable
+ * This is the recommended method for CodeEngine deployments
+ *
+ * @param serviceDefinition The service definition object
+ * @returns The service definition with signature added
+ */
+export function signServiceDefinition(serviceDefinition: any): any {
+  try {
+    // Make a copy of the service definition
+    const signedServiceDefinition = { ...serviceDefinition };
+    
+    // Extract the deployment field
+    let deployment = signedServiceDefinition.deployment;
+    
+    // If deployment is a string, parse it to an object for signing
+    const deploymentObj = typeof deployment === 'string'
+      ? JSON.parse(deployment)
+      : deployment;
+    
+    // Check if we have a private key in the environment
+    if (!PRIVATE_KEY) {
+      console.warn('No PRIVATE_KEY environment variable found. Skipping deployment signature.');
+      return signedServiceDefinition;
+    }
+    
+    try {
+      // Generate the signature
+      const sign = crypto.createSign('SHA256');
+      sign.update(JSON.stringify(deploymentObj));
+      
+      // Try to sign with the private key
+      const signature = sign.sign(PRIVATE_KEY, 'base64');
+      
+      // Add the signature to the service definition
+      signedServiceDefinition.deploymentSignature = signature;
+      console.log('Service definition successfully signed');
+    } catch (signError) {
+      console.error('Error during signing operation:', signError);
+      console.log('Private key format may be incorrect. Skipping signature generation.');
+      // Return without signature if signing fails
+      return signedServiceDefinition;
+    }
+    
+    return signedServiceDefinition;
+  } catch (error) {
+    console.error('Error signing service definition:', error);
+    // Return the original service definition if signing fails
+    return serviceDefinition;
   }
 }
 

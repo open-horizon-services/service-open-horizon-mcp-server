@@ -51,7 +51,7 @@ export function registerNodePolicyTool(server: McpServer) {
       // If a complete policy is not provided, build one from template
       if (!policy) {
         // Load the node policy template
-        const templatePath = path.join(process.cwd(), 'open-horizon-mcp-v2', 'templates', 'node.policy.json');
+        const templatePath = path.join(process.cwd(), 'templates', 'node.policy.json');
         
         console.log(`Loading template from ${templatePath}`);
         let templateContent;

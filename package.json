@@ -17,6 +17,7 @@
     "build:image": "npm run build && npm run code-engine --task=build --name=$npm_package_name",
     "deploy:prod:all": "npm run build:doall --name=$npm_package_name --env=prod",
     "deploy:prod:create:all:omit-credential": "npm run deploy:prod:all --create=true --omitcredential=true --region=dockerhub --namespace=playbox21",
+    "deploy:prod:update:all:omit-credential": "npm run deploy:prod:all --create=false --omitcredential=true --region=dockerhub --namespace=playbox21 --name=$npm_package_name",
     "deploy:stage:all": "npm run build:doall --name=$npm_package_name  --env=stage",
     "deploy:dev:all": "npm run build:doall --name=$npm_package_name  --env=dev",
     "deploy:prod": "npm run code-engine --task=deploy --name=$npm_package_name --env=prod",
@@ -36,6 +37,8 @@
     "select-project": "ibmcloud ce project select -n mcp-demo",
     "select-target": "ibmcloud target -g Default",
     "code-engine": "bin/deploy.js",
+    "gen-keys": "hzn key create private-key public-key",
+    "gen-private-key-base64": "cat .env-private-key | base64 -w 0 > .env-private-key-base64",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -53,10 +56,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "compromise": "^14.14.4",
+    "compromise-sentences": "^0.3.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "log4js": "^6.9.1",
+    "node-fetch": "^3.3.2",
     "zod": "^3.25.76"
   }
 }
