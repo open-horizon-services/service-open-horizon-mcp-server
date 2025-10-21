@@ -22,6 +22,15 @@ import { registerUpdateNodePolicyTool } from './tools/update-node-policy';
 import { registerGenerateServiceDefinitionTool } from './tools/generate-service-definition';
 import { registerApiQueryTool } from './tools/api-query-tool';
 import { registerApiQueryToolNlp } from './tools/api-query-tool-nlp';
+import { registerAdminVersionTool } from './tools/admin-version';
+import { registerAdminStatusTool } from './tools/admin-status';
+import { registerOrgStatusTool } from './tools/org-status';
+import { registerListManagementPolicies } from './tools/list-management-policies';
+import { registerManageManagementPolicy } from './tools/manage-management-policy';
+import { registerListHaGroups } from './tools/list-ha-groups';
+import { registerManageHaGroup } from './tools/manage-ha-group';
+import { registerManageHaGroupNode } from './tools/manage-ha-group-node';
+import { registerManageDeploymentPolicy } from './tools/manage-deployment-policy';
 
 /**
  * Factory to create and configure a new McpServer (tools/resources/prompts)
@@ -51,6 +60,11 @@ export function createMcpServer(requestContext: any): McpServer {
       - Unregistering nodes
       - Registering nodes with policies
       - Generating service definition files
+      - Getting admin status and version information
+      - Managing organization status
+      - Working with management policies
+      - Creating and managing high availability groups
+      - Creating, updating, and managing deployment policies
       - Answering questions about the Open Horizon API endpoints and usage
       
       Always provide clear and concise information about Open Horizon resources.
@@ -87,6 +101,15 @@ export function createMcpServer(requestContext: any): McpServer {
   registerGenerateServiceDefinitionTool(server);
   registerApiQueryTool(server);
   registerApiQueryToolNlp(server);
+  registerAdminVersionTool(server);
+  registerAdminStatusTool(server);
+  registerOrgStatusTool(server);
+  registerListManagementPolicies(server);
+  registerManageManagementPolicy(server);
+  registerListHaGroups(server);
+  registerManageHaGroup(server);
+  registerManageHaGroupNode(server);
+  registerManageDeploymentPolicy(server);
 
   // Add a simple status resource
   server.resource('status', 'status', async () => {
