@@ -72,7 +72,17 @@ export async function makeHttpRequest<T = any>(url: string, headers: Record<stri
     if (!response.ok) {
       return getErrorMessage(`Error fetching data: ${response.status} ${response.statusText}`);
     }
-    return (await response.json()) as T;
+    
+    // Check the content type to determine how to parse the response
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      return (await response.json()) as T;
+    } else {
+      // Handle text response
+      const textResponse = await response.text();
+      return textResponse as unknown as T;
+    }
 
   } catch (err: any) {
     console.log(`Error making request to ${url}:`, err);
@@ -115,7 +125,17 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
       console.error(`Error response: ${response.status} ${response.statusText}${errorDetail}`);
       return getErrorMessage(`Error posting data: ${response.status} ${response.statusText}${errorDetail}`);
     }
-    return (await response.json()) as T;
+    
+    // Check the content type to determine how to parse the response
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      return (await response.json()) as T;
+    } else {
+      // Handle text response
+      const textResponse = await response.text();
+      return textResponse as unknown as T;
+    }
 
   } catch (err: any) {
     console.log(`Error making POST request to ${url}:`, err);
@@ -150,7 +170,16 @@ export async function makeDeleteRequest<T = any>(url: string, headers: Record<st
       return { success: true } as unknown as T;
     }
     
-    return (await response.json()) as T;
+    // Check the content type to determine how to parse the response
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      return (await response.json()) as T;
+    } else {
+      // Handle text response
+      const textResponse = await response.text();
+      return textResponse as unknown as T;
+    }
 
   } catch (err: any) {
     console.log(`Error making DELETE request to ${url}:`, err);
@@ -420,6 +449,46 @@ export function signServiceDefinition(serviceDefinition: any): any {
     // Return the original service definition if signing fails
     return serviceDefinition;
   }
+}
+
+/**
+ * Get admin version information
+ * @param url Base Exchange URL
+ * @param credential Base64 encoded credential
+ * @returns Promise resolving to the version information
+ */
+export async function getAdminVersion(url: string, credential: string): Promise<any> {
+  const versionUrl = `${url.replace(/\/v1$/, '')}/v1/admin/version`;
+  return makeHttpRequest(versionUrl, {
+    Authorization: `Basic ${credential}`
+  });
+}
+
+/**
+ * Get admin status information
+ * @param url Base Exchange URL
+ * @param credential Base64 encoded credential
+ * @returns Promise resolving to the status information
+ */
+export async function getAdminStatus(url: string, credential: string): Promise<any> {
+  const statusUrl = `${url.replace(/\/v1$/, '')}/v1/admin/status`;
+  return makeHttpRequest(statusUrl, {
+    Authorization: `Basic ${credential}`
+  });
+}
+
+/**
+ * Get organization status information
+ * @param url Base Exchange URL
+ * @param organization Organization ID
+ * @param credential Base64 encoded credential
+ * @returns Promise resolving to the organization status information
+ */
+export async function getOrgStatus(url: string, organization: string, credential: string): Promise<any> {
+  const orgStatusUrl = `${url}/${organization}/status`;
+  return makeHttpRequest(orgStatusUrl, {
+    Authorization: `Basic ${credential}`
+  });
 }
 
 // Made with Bob
