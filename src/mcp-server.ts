@@ -30,6 +30,7 @@ import { registerManageManagementPolicy } from './tools/manage-management-policy
 import { registerListHaGroups } from './tools/list-ha-groups';
 import { registerManageHaGroup } from './tools/manage-ha-group';
 import { registerManageHaGroupNode } from './tools/manage-ha-group-node';
+import { registerManageDeploymentPolicy } from './tools/manage-deployment-policy';
 
 /**
  * Factory to create and configure a new McpServer (tools/resources/prompts)
@@ -63,6 +64,7 @@ export function createMcpServer(requestContext: any): McpServer {
       - Managing organization status
       - Working with management policies
       - Creating and managing high availability groups
+      - Creating, updating, and managing deployment policies
       - Answering questions about the Open Horizon API endpoints and usage
       
       Always provide clear and concise information about Open Horizon resources.
@@ -107,6 +109,7 @@ export function createMcpServer(requestContext: any): McpServer {
   registerListHaGroups(server);
   registerManageHaGroup(server);
   registerManageHaGroupNode(server);
+  registerManageDeploymentPolicy(server);
 
   // Add a simple status resource
   server.resource('status', 'status', async () => {
