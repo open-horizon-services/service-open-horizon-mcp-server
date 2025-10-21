@@ -26,7 +26,18 @@ The Open Horizon MCP Server is built on the Model Context Protocol (MCP) framewo
   - Get detailed information about specific policies
   - Check which workloads are deployed with a specific policy
   - Check service compatibility with policies
-  - Delete policies from the Exchange
+  - Create, update, and delete deployment policies
+  - List and manage management policies
+  
+- **Administration**
+  - Get Exchange version information
+  - Get Exchange status information
+  - Get organization status
+  
+- **High Availability Management**
+  - List high availability groups
+  - Create, update, and delete high availability groups
+  - Add and remove nodes from high availability groups
 
 ## Prerequisites
 
@@ -139,6 +150,68 @@ The server provides the following tools through the MCP protocol. Each tool has 
 | `check-policy-deployments` | Check which workloads are deployed with a specific policy | "What workloads use policy X?", "Show deployments for policy X", "Which services are deployed with policy X?" |
 | `check-policy-compatibility` | Check which services are compatible with a specific policy | "Which services are compatible with policy X?", "Show services compatible with policy X", "What can run with policy X?" |
 | `delete-policy` | Delete a policy from the Exchange/Management Hub | "Delete policy X", "Remove policy X from the Exchange", "Delete policy X from the Management Hub" |
+| `manage-deployment-policy` | Create, update, or get details of a deployment policy | "Create a new deployment policy", "Update policy X", "Get details of policy X" |
+| `list-management-policies` | List all management policies in the Exchange | "List all management policies", "Show management policies", "What management policies are available?" |
+| `manage-management-policy` | Create, update, or get details of a management policy | "Create a new management policy", "Update management policy X", "Get details of management policy X" |
+
+### Administration Tools
+
+| Tool Name | Description | Example Trigger Phrases |
+|-----------|-------------|------------------------|
+| `admin-version` | Get Exchange version information | "What version of Exchange is running?", "Get Exchange version", "Show Exchange version information" |
+| `admin-status` | Get Exchange status information | "What is the status of the Exchange?", "Get Exchange status", "Show Exchange health information" |
+| `org-status` | Get organization status information | "What is the status of organization X?", "Get organization status", "Show organization health information" |
+
+### High Availability Management Tools
+
+| Tool Name | Description | Example Trigger Phrases |
+|-----------|-------------|------------------------|
+| `list-ha-groups` | List all high availability groups | "List all HA groups", "Show high availability groups", "What HA groups are available?" |
+| `manage-ha-group` | Create, update, or get details of a high availability group | "Create a new HA group", "Update HA group X", "Get details of HA group X" |
+| `manage-ha-group-node` | Add or remove nodes from a high availability group | "Add node X to HA group Y", "Remove node X from HA group Y", "Manage nodes in HA group X" |
+
+## Architecture
+
+The Open Horizon MCP Server follows a modular architecture that enables AI assistants to interact with the Open Horizon Exchange API through the Model Context Protocol (MCP).
+
+```
+┌─────────────────┐     ┌───────────────────────┐     ┌─────────────────────┐
+│                 │     │                       │     │                     │
+│  MCP Clients    │     │  Open Horizon         │     │  Open Horizon       │
+│                 │     │  MCP Server           │     │  Exchange API       │
+│  - Claude       │◄───►│                       │◄───►│                     │
+│  - bobShell     │     │  - Tools              │     │  - Services         │
+│  - Custom       │     │  - Resources          │     │  - Nodes            │
+│  - Applications │     │  - Prompts            │     │  - Policies         │
+│                 │     │                       │     │  - HA Groups        │
+└─────────────────┘     └───────────────────────┘     └─────────────────────┘
+```
+
+### Key Components
+
+1. **MCP Clients**
+   - **Claude Desktop**: AI assistant that can interact with the MCP server
+   - **bobShell**: Command-line interface for interacting with MCP servers
+   - **Custom Applications**: Any application that implements the MCP client protocol
+
+2. **Open Horizon MCP Server**
+   - **Tools**: Specialized functions for interacting with the Exchange API
+   - **Resources**: Static or dynamic content provided by the server
+   - **Prompts**: Pre-defined instructions for AI assistants
+
+3. **Open Horizon Exchange API**
+   - RESTful API for managing Open Horizon resources
+   - Endpoints for services, nodes, policies, and more
+
+### Data Flow
+
+1. User sends a request to an MCP client (e.g., asking Claude to "List all nodes in the Exchange")
+2. The MCP client recognizes the intent and sends a request to the MCP server
+3. The MCP server invokes the appropriate tool (e.g., `list-nodes`)
+4. The tool makes an HTTP request to the Open Horizon Exchange API
+5. The Exchange API returns data to the MCP server
+6. The MCP server formats the response and returns it to the MCP client
+7. The MCP client presents the formatted response to the user
 
 ## Using with AI Assistants
 
@@ -214,6 +287,10 @@ open-horizon-mcp-server/
 │   ├── services/
 │   │   └── common.ts
 │   ├── tools/
+│   │   ├── admin-status.ts
+│   │   ├── admin-version.ts
+│   │   ├── api-query-tool-nlp.ts
+│   │   ├── api-query-tool.ts
 │   │   ├── check-policy-compatibility.ts
 │   │   ├── check-policy-deployments.ts
 │   │   ├── delete-policy.ts
@@ -223,10 +300,18 @@ open-horizon-mcp-server/
 │   │   ├── get-policy-details.ts
 │   │   ├── get-service-details.ts
 │   │   ├── list-deployment-policies.ts
+│   │   ├── list-ha-groups.ts
+│   │   ├── list-management-policies.ts
 │   │   ├── list-nodes.ts
 │   │   ├── list-services.ts
+│   │   ├── manage-deployment-policy.ts
+│   │   ├── manage-ha-group-node.ts
+│   │   ├── manage-ha-group.ts
+│   │   ├── manage-management-policy.ts
+│   │   ├── org-status.ts
 │   │   ├── publish-service.ts
 │   │   ├── register-node-policy.ts
+│   │   ├── update-node-policy.ts
 │   │   └── unregister-node.ts
 │   ├── mcp-server.ts
 │   └── server.ts

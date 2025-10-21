@@ -221,7 +221,7 @@ export function registerPublishServiceTool(server: McpServer) {
               console.log(`Using Docker image "${imageUrl}" from deployment instead of service URL "${serviceDefinition.url}"`);
               
               // Extract just the repository/name part without tag or digest for the service ID
-              const simpleName = imageUrl.split('/').pop()?.split('@')[0].split(':')[0];
+              const simpleName = imageUrl.split('/').pop()?.split('@')[0].split(':')[0].replace(`_${serviceDefinition.arch.toLowerCase()}`, '');
               if (simpleName) {
                 serviceId = `${simpleName}_${serviceDefinition.version}_${serviceDefinition.arch}`;
                 serviceDefinition.url = simpleName;
