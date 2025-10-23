@@ -13,7 +13,9 @@ import {
   getExchangeParams,
   addDeploymentSignatureFromKey,
   generateDeploymentSignatureFromKey,
-  signServiceDefinition
+  signServiceDefinition,
+  storeServicePublicKey,
+  PUBLIC_PEM
 } from '../services/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -58,6 +60,48 @@ export function registerPublishServiceTool(server: McpServer) {
     updateFileName: z.string().optional().describe('The update file name (for with-inputs template)'),
   };
   
+  /**
+   * Helper function to store a public key for a service
+   * @param url Base Exchange URL
+   * @param organization Organization ID
+   * @param serviceId Service ID
+   * @param credential Base64 encoded credential
+   * @returns A message indicating success or warning
+   */
+  const storePublicKeyForService = async (
+    url: string,
+    organization: string,
+    serviceId: string,
+    credential: string
+  ): Promise<string> => {
+    if (PUBLIC_PEM) {
+      console.log(`Storing public key for service ${serviceId}`);
+      try {
+        const keyResponse = await storeServicePublicKey(
+          url,
+          organization,
+          serviceId,
+          PUBLIC_PEM,
+          credential
+        );
+        
+        if (keyResponse && typeof keyResponse === 'object' && 'content' in keyResponse) {
+          console.warn(`Warning: Could not store public key: ${keyResponse.content[0]?.text}`);
+          return '';
+        } else {
+          console.log('Public key stored successfully');
+          return ' Public key was also stored with the service.';
+        }
+      } catch (keyError) {
+        console.warn(`Warning: Error storing public key: ${keyError}`);
+        return '';
+      }
+    } else {
+      console.log('No public key available to store');
+      return '';
+    }
+  };
+
   const toolCallback = async (params: any, context: any): Promise<any> => {
     try {
       // Access headers from the shared context
@@ -277,6 +321,7 @@ export function registerPublishServiceTool(server: McpServer) {
       // This will work in CodeEngine and other environments where the PRIVATE_KEY env var is set
       const signedServiceDefinition = signServiceDefinition(serviceDefinition);
       console.log('Service definition signed:', signedServiceDefinition.deploymentSignature ? 'Yes' : 'No');
+      console.log('Service definition: ', signedServiceDefinition);
       
       // First check if the service exists
       console.log(`Checking if service exists at ${serviceUrl}`);
@@ -306,11 +351,14 @@ export function registerPublishServiceTool(server: McpServer) {
             return createResponse;
           }
           
+          // After successfully creating the service, store the public key if available
+          const keyMessage = await storePublicKeyForService(url, organization, serviceId, credential);
+          
           return {
             content: [
               {
                 type: 'text',
-                text: `Successfully created service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} in organization ${organization}.`
+                text: `Successfully created service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} in organization ${organization}.${keyMessage}`
               }
             ]
           };
@@ -330,24 +378,14 @@ export function registerPublishServiceTool(server: McpServer) {
           return response;
         }
         
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully updated service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} in organization ${organization}.`
-            }
-          ]
-        };
-        // If response has content property, it's already formatted as ToolResponse (error case)
-        if (response && typeof response === 'object' && 'content' in response) {
-          return response;
-        }
+        // After successfully updating the service, store the public key if available
+        const keyMessage = await storePublicKeyForService(url, organization, serviceId, credential);
         
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully updated service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} in organization ${organization}.`
+              text: `Successfully updated service "${serviceDefinition.url}" version ${serviceDefinition.version} for architecture ${serviceDefinition.arch} in organization ${organization}.${keyMessage}`
             }
           ]
         };

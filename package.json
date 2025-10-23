@@ -7,7 +7,7 @@
     "build": "tsc && node -e \"require('fs').chmodSync('dist/server.js', '755')\"",
     "start": "npm run build && node dist/server.js",
     "start:port": "npm run build && PORT=$npm_config_port node dist/server.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/server.ts",
+    "dev:build": "nodemon --watch 'src/**/*.ts' --exec ts-node src/server.ts",
     "dev:port": "nodemon --watch 'src/**/*.ts' --exec PORT=$npm_config_port ts-node src/server.ts",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
     "test:mcp": "node tests/test-mcp-server.js",
@@ -38,6 +38,8 @@
     "select-target": "ibmcloud target -g Default",
     "code-engine": "bin/deploy.js",
     "gen-keys": "hzn key create private-key public-key",
+    "convert-public-key": "openssl x509 -in .env-service-public-pem -pubkey -noout > .env-public-key",
+    "gen-public-key-base64": "cat .env-public-key | base64 -w 0 > .env-public-key-base64",
     "gen-private-key-base64": "cat .env-private-key | base64 -w 0 > .env-private-key-base64",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

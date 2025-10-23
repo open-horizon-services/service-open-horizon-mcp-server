@@ -7,12 +7,17 @@ const EXCHANGE_URL = process.env.EXCHANGE_URL || '';
 const EXCHANGE_ORG = process.env.EXCHANGE_ORG || '';
 const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
 
-// Handle base64-encoded private key
+// Handle base64-encoded private key & public key
 // PRIVATE_KEY is already base64 encoded in .env
 const PRIVATE_KEY_BASE64 = process.env.PRIVATE_KEY || '';
 const PRIVATE_KEY = PRIVATE_KEY_BASE64
   ? Buffer.from(PRIVATE_KEY_BASE64, 'base64').toString()
   : '';
+ 
+const PUBLIC_PEM_BASE64 = process.env.PUBLIC_PEM || '';
+export const PUBLIC_PEM = PUBLIC_PEM_BASE64
+  ? Buffer.from(PUBLIC_PEM_BASE64, 'base64').toString()
+  : ''; 
 
 console.log('Private key loaded:', PRIVATE_KEY ? 'Yes' : 'No');
 
@@ -488,7 +493,34 @@ export async function getOrgStatus(url: string, organization: string, credential
   const orgStatusUrl = `${url}/${organization}/status`;
   return makeHttpRequest(orgStatusUrl, {
     Authorization: `Basic ${credential}`
-  });
-}
+    });
+  }
+  
+  /**
+   * Store a public key for a service
+   * @param url Base Exchange URL
+   * @param organization Organization ID
+   * @param serviceId Service ID (in the format name_version_arch)
+   * @param publicKey Public key content (PEM format)
+   * @param credential Base64 encoded credential
+   * @returns Promise resolving to the response
+   */
+  export async function storeServicePublicKey(
+    url: string,
+    organization: string,
+    serviceId: string,
+    publicKey: string,
+    credential: string
+  ): Promise<any> {
+    const keyUrl = `${url}/${organization}/services/${serviceId}/keys/service.public.pem`;
+    console.log(`Storing public key for service ${serviceId} at ${keyUrl}`);
+    
+    // The API expects the public key as plain text in the request body
+    return makePostRequest(keyUrl, publicKey, {
+      Authorization: `Basic ${credential}`,
+      'Content-Type': 'text/plain' // Override the default application/json
+    }, 'PUT');
+  }
+  
+  // Made with Bob
 
-// Made with Bob
