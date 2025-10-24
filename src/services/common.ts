@@ -113,7 +113,7 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
     const response = await fetch(url, {
       method: method,
       headers: finalHeaders,
-      body: JSON.stringify(data)
+      body: typeof data === 'string' ? data : JSON.stringify(data)
     });
 
     if (!response.ok) {
@@ -432,11 +432,15 @@ export function signServiceDefinition(serviceDefinition: any): any {
     
     try {
       // Generate the signature
+      const privateKey = PRIVATE_KEY.replace(/\\n/g, '\n');
       const sign = crypto.createSign('SHA256');
-      sign.update(JSON.stringify(deploymentObj));
+      const deploymentString = `${JSON.stringify(deploymentObj).replace(/"/g, '\\"')}`
+      console.log('deploymentString:', deploymentString);
+      sign.update(deploymentString);
       
       // Try to sign with the private key
-      const signature = sign.sign(PRIVATE_KEY, 'base64');
+      const signature = sign.sign(privateKey, 'base64');
+      console.log('privateKey:', privateKey);
       
       // Add the signature to the service definition
       signedServiceDefinition.deploymentSignature = signature;
@@ -512,11 +516,17 @@ export async function getOrgStatus(url: string, organization: string, credential
     publicKey: string,
     credential: string
   ): Promise<any> {
-    const keyUrl = `${url}/${organization}/services/${serviceId}/keys/service.public.pem`;
-    console.log(`Storing public key for service ${serviceId} at ${keyUrl}`);
+    const keyUrl = `${url}/${organization}/services/${serviceId}/keys/default.public.key`;
+    console.log(`Storing public key for service ${serviceId} with PUT ${keyUrl}`);
     
     // The API expects the public key as plain text in the request body
-    return makePostRequest(keyUrl, publicKey, {
+    const cleanPublicKey = publicKey
+      ?.replace(/^"+|"+$/g, '')
+      ?.replace(/^'+|'+$/g, '')
+      ?.replace(/\\\\n/g, '\n')   // first, replace double-escaped newlines
+      ?.replace(/\\n/g, '\n');
+    console.log('cleanPublicKey: ', cleanPublicKey)  
+    return makePostRequest(keyUrl, cleanPublicKey, {
       Authorization: `Basic ${credential}`,
       'Content-Type': 'text/plain' // Override the default application/json
     }, 'PUT');

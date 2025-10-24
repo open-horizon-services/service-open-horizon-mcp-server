@@ -268,7 +268,7 @@ export function registerPublishServiceTool(server: McpServer) {
               const simpleName = imageUrl.split('/').pop()?.split('@')[0].split(':')[0].replace(`_${serviceDefinition.arch.toLowerCase()}`, '');
               if (simpleName) {
                 serviceId = `${simpleName}_${serviceDefinition.version}_${serviceDefinition.arch}`;
-                serviceDefinition.url = simpleName;
+                serviceDefinition.url = `${simpleName}`;
                 console.log(`Updated service definition URL to "${serviceDefinition.url}"`);
                 console.log(`Service ID will be: ${serviceId}`);
               }
