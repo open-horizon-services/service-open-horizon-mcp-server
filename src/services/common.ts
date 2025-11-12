@@ -2,10 +2,18 @@ import { ToolResponse } from "../models/model";
 import 'dotenv/config';
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
+import * as https from 'https';
 
 const EXCHANGE_URL = process.env.EXCHANGE_URL || '';
 const EXCHANGE_ORG = process.env.EXCHANGE_ORG || '';
 const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
+const DISABLE_SSL_VERIFY = process.env.DISABLE_SSL_VERIFY === 'true';
+
+// Set Node.js to not reject unauthorized certificates if DISABLE_SSL_VERIFY is true
+if (DISABLE_SSL_VERIFY) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  console.log('SSL certificate verification disabled (NODE_TLS_REJECT_UNAUTHORIZED=0)');
+}
 
 // Handle base64-encoded private key & public key
 // PRIVATE_KEY is already base64 encoded in .env

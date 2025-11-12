@@ -127,6 +127,9 @@ let build = {
     if(pEnv.length == 0 && ceAccess[env]?.PRIVATE_KEY) {
       arg += ` --env PRIVATE_KEY=${ceAccess[env].PRIVATE_KEY}`;
     }
+    // Set to 'true' to disable SSL certificate verification for HTTPS requests (useful for self-signed certificates)
+    arg += ` --env DISABLE_SSL_VERIFY=true`;
+    
     //console.log(arg);
     //arg += ` --env bucket=${pEnv.bucket} --env HZN_ORG_ID=${pEnv.HZN_ORG_ID}`;
     //arg += ` --env HZN_EXCHANGE_USER_AUTH=${pEnv.HZN_EXCHANGE_USER_AUTH} --env HZN_FSS_CSSURL=${pEnv.HZN_FSS_CSSURL}`;
