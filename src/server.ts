@@ -149,7 +149,7 @@ app.get('/mcp', handleSessionRequest);
 app.delete('/mcp', handleSessionRequest);
 
 // Health check endpoint for Code Engine
-app.get('/health', (req, res) => {
+app.get('/mcp/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
 });
 
