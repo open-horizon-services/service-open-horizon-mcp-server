@@ -265,6 +265,8 @@ The `list-nodes` tool is particularly useful for viewing all edge devices regist
 
 If Claude doesn't recognize your request, try rephrasing with one of these specific patterns.
 
+<img width="1047" alt="image" src="https://github.ibm.com/user-attachments/assets/f13dd2bb-1545-4e58-a1c3-bb09318268b5" />
+
 ## Templates
 
 The server includes templates for common operations:
