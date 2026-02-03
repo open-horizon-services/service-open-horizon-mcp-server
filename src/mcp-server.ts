@@ -31,6 +31,7 @@ import { registerListHaGroups } from './tools/list-ha-groups';
 import { registerManageHaGroup } from './tools/manage-ha-group';
 import { registerManageHaGroupNode } from './tools/manage-ha-group-node';
 import { registerManageDeploymentPolicy } from './tools/manage-deployment-policy';
+import { registerIeamDocQueryTool } from './tools/ieamDocQueryTool';
 
 // Import all prompt registration functions
 import { registerDeploymentManagementPrompts } from './prompts/deployment-management';
@@ -116,6 +117,7 @@ export function createMcpServer(requestContext: any): McpServer {
   registerManageHaGroup(server);
   registerManageHaGroupNode(server);
   registerManageDeploymentPolicy(server);
+  registerIeamDocQueryTool(server);
 
   // Register prompts
   registerDeploymentManagementPrompts(server);
