@@ -35,6 +35,13 @@ export function getExchangeParams(params: any, context: any): {url: string, cred
   const organization = params.org || headers['exchange-org'] || EXCHANGE_ORG;
   const url = `${headers['exchange-url'] || EXCHANGE_URL}`;
   const credential = `${headers['exchange-credential'] || EXCHANGE_CREDENTIAL}`;
+  if(headers['ieam-rag-api-url']) {
+    process.env.IEAM_RAG_API_URL = headers['ieam-rag-api-url'];
+  }
+  if(headers['openai-api-key']) {
+    process.env.OPENAI_API_KEY = headers['openai-api-key'];
+  }
+  console.log(`Using Exchange URL: ${url}, ${organization}, ${credential}`);
   return {organization, url, credential}
 }
 /**
