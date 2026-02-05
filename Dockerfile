@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm run build
 RUN npm prune --production
 
 # ---- Final runtime stage ----
-FROM --platform=$TARGETPLATFORM node:20-slim AS runtime
+FROM node:22-slim AS runtime
 
 # Create non-root user for security
 RUN groupadd -g 1001 appuser && useradd -r -u 1001 -g appuser appuser
@@ -37,6 +37,6 @@ EXPOSE $PORT
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/mcp/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 CMD ["node", "dist/server.js"]

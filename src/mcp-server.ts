@@ -31,6 +31,13 @@ import { registerListHaGroups } from './tools/list-ha-groups';
 import { registerManageHaGroup } from './tools/manage-ha-group';
 import { registerManageHaGroupNode } from './tools/manage-ha-group-node';
 import { registerManageDeploymentPolicy } from './tools/manage-deployment-policy';
+import { registerIeamDocQueryTool } from './tools/ieamDocQueryTool';
+
+// Import all prompt registration functions
+import { registerDeploymentManagementPrompts } from './prompts/deployment-management';
+import { registerServiceManagementPrompts } from './prompts/service-management';
+import { registerNodeManagementPrompts } from './prompts/node-management';
+import { registerPolicyAnalysisPrompts } from './prompts/policy-analysis';
 
 /**
  * Factory to create and configure a new McpServer (tools/resources/prompts)
@@ -110,6 +117,13 @@ export function createMcpServer(requestContext: any): McpServer {
   registerManageHaGroup(server);
   registerManageHaGroupNode(server);
   registerManageDeploymentPolicy(server);
+  registerIeamDocQueryTool(server);
+
+  // Register prompts
+  registerDeploymentManagementPrompts(server);
+  registerServiceManagementPrompts(server);
+  registerNodeManagementPrompts(server);
+  registerPolicyAnalysisPrompts(server);
 
   // Add a simple status resource
   server.resource('status', 'status', async () => {

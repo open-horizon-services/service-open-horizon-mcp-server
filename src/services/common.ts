@@ -2,17 +2,30 @@ import { ToolResponse } from "../models/model";
 import 'dotenv/config';
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
+import * as https from 'https';
 
 const EXCHANGE_URL = process.env.EXCHANGE_URL || '';
 const EXCHANGE_ORG = process.env.EXCHANGE_ORG || '';
 const EXCHANGE_CREDENTIAL = process.env.EXCHANGE_CREDENTIAL || '';
+const DISABLE_SSL_VERIFY = process.env.DISABLE_SSL_VERIFY === 'true';
 
-// Handle base64-encoded private key
+// Set Node.js to not reject unauthorized certificates if DISABLE_SSL_VERIFY is true
+if (DISABLE_SSL_VERIFY) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  console.log('SSL certificate verification disabled (NODE_TLS_REJECT_UNAUTHORIZED=0)');
+}
+
+// Handle base64-encoded private key & public key
 // PRIVATE_KEY is already base64 encoded in .env
 const PRIVATE_KEY_BASE64 = process.env.PRIVATE_KEY || '';
 const PRIVATE_KEY = PRIVATE_KEY_BASE64
   ? Buffer.from(PRIVATE_KEY_BASE64, 'base64').toString()
   : '';
+ 
+const PUBLIC_PEM_BASE64 = process.env.PUBLIC_PEM || '';
+export const PUBLIC_PEM = PUBLIC_PEM_BASE64
+  ? Buffer.from(PUBLIC_PEM_BASE64, 'base64').toString()
+  : ''; 
 
 console.log('Private key loaded:', PRIVATE_KEY ? 'Yes' : 'No');
 
@@ -22,6 +35,13 @@ export function getExchangeParams(params: any, context: any): {url: string, cred
   const organization = params.org || headers['exchange-org'] || EXCHANGE_ORG;
   const url = `${headers['exchange-url'] || EXCHANGE_URL}`;
   const credential = `${headers['exchange-credential'] || EXCHANGE_CREDENTIAL}`;
+  if(headers['ieam-rag-api-url']) {
+    process.env.IEAM_RAG_API_URL = headers['ieam-rag-api-url'];
+  }
+  if(headers['openai-api-key']) {
+    process.env.OPENAI_API_KEY = headers['openai-api-key'];
+  }
+  console.log(`Using Exchange URL: ${url}, ${organization}, ${credential}`);
   return {organization, url, credential}
 }
 /**
@@ -108,7 +128,7 @@ export async function makePostRequest<T = any>(url: string, data: any, headers: 
     const response = await fetch(url, {
       method: method,
       headers: finalHeaders,
-      body: JSON.stringify(data)
+      body: typeof data === 'string' ? data : JSON.stringify(data)
     });
 
     if (!response.ok) {
@@ -427,11 +447,15 @@ export function signServiceDefinition(serviceDefinition: any): any {
     
     try {
       // Generate the signature
+      const privateKey = PRIVATE_KEY.replace(/\\n/g, '\n');
       const sign = crypto.createSign('SHA256');
-      sign.update(JSON.stringify(deploymentObj));
+      const deploymentString = `${JSON.stringify(deploymentObj).replace(/"/g, '\\"')}`
+      console.log('deploymentString:', deploymentString);
+      sign.update(deploymentString);
       
       // Try to sign with the private key
-      const signature = sign.sign(PRIVATE_KEY, 'base64');
+      const signature = sign.sign(privateKey, 'base64');
+      console.log('privateKey:', privateKey);
       
       // Add the signature to the service definition
       signedServiceDefinition.deploymentSignature = signature;
@@ -488,7 +512,40 @@ export async function getOrgStatus(url: string, organization: string, credential
   const orgStatusUrl = `${url}/${organization}/status`;
   return makeHttpRequest(orgStatusUrl, {
     Authorization: `Basic ${credential}`
-  });
-}
+    });
+  }
+  
+  /**
+   * Store a public key for a service
+   * @param url Base Exchange URL
+   * @param organization Organization ID
+   * @param serviceId Service ID (in the format name_version_arch)
+   * @param publicKey Public key content (PEM format)
+   * @param credential Base64 encoded credential
+   * @returns Promise resolving to the response
+   */
+  export async function storeServicePublicKey(
+    url: string,
+    organization: string,
+    serviceId: string,
+    publicKey: string,
+    credential: string
+  ): Promise<any> {
+    const keyUrl = `${url}/${organization}/services/${serviceId}/keys/default.public.key`;
+    console.log(`Storing public key for service ${serviceId} with PUT ${keyUrl}`);
+    
+    // The API expects the public key as plain text in the request body
+    const cleanPublicKey = publicKey
+      ?.replace(/^"+|"+$/g, '')
+      ?.replace(/^'+|'+$/g, '')
+      ?.replace(/\\\\n/g, '\n')   // first, replace double-escaped newlines
+      ?.replace(/\\n/g, '\n');
+    console.log('cleanPublicKey: ', cleanPublicKey)  
+    return makePostRequest(keyUrl, cleanPublicKey, {
+      Authorization: `Basic ${credential}`,
+      'Content-Type': 'text/plain' // Override the default application/json
+    }, 'PUT');
+  }
+  
+  // Made with Bob
 
-// Made with Bob
