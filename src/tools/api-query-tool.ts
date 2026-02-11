@@ -775,23 +775,29 @@ export function generateUsageExample(endpoint: any): string {
 export function registerApiQueryTool(server: McpServer) {
   const toolName = 'api-query-tool';
   const toolDescription = `
-    Use this tool to query the Open Horizon API documentation and get information about API endpoints,
-    parameters, and usage examples.
+    Query the Open Horizon Exchange REST API technical specification (OpenAPI/Swagger) to find
+    specific API endpoints, HTTP methods, parameters, request/response formats, and curl examples.
     
-    You can ask questions like:
-    - How do I get a list of services?
-    - How do I get a specific service by ID?
-    - What endpoints are available for managing nodes?
-    - How do I register a node?
-    - What parameters are required for publishing a service?
-    - How do I delete a specific service?
-    - How do I query a single node?
+    BEST FOR THESE TYPES OF QUESTIONS:
+    - "What API endpoint lists services?" or "Show me the GET services API"
+    - "What parameters does the node registration API need?"
+    - "Show me the API for deleting a policy"
+    - "What is the request body format for publishing a service?"
+    - "What HTTP method is used to update a deployment policy?"
+    - "Show me curl examples for the nodes API"
+    - "What are the response codes for the service creation endpoint?"
     
-    NOTE: For complex queries like "how to update node policy?" or conversational queries,
-    please use the api-query-tool-nlp tool instead, which provides better natural language understanding.
+    NOT FOR:
+    - Conceptual questions about IEAM/Open Horizon (use ieam-doc-query instead)
+    - "What is IEAM?" or "Explain IEAM architecture" (use ieam-doc-query)
+    - Installation guides or prerequisites (use ieam-doc-query)
+    - Best practices or troubleshooting (use ieam-doc-query)
     
-    The tool will search the OpenAPI specification and return relevant information about matching endpoints,
-    including parameters, request bodies, responses, and usage examples.
+    NOTE: For complex natural language queries like "how to update node policy?" use
+    api-query-tool-nlp instead, which provides better contextual understanding.
+    
+    This tool searches the OpenAPI specification and returns technical API details including
+    endpoints, parameters, request bodies, responses, and usage examples.
   `;
   const toolSchema = {
     query: z.string().describe('The question or search query about the Open Horizon API'),
