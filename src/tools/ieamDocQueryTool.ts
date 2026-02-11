@@ -3,9 +3,6 @@ import { ToolResponse } from '../models/model';
 import { z } from 'zod';
 import { makePostRequest, getExchangeParams  } from '../services/common';
 
-// IEAM-RAG API endpoint
-const IEAM_RAG_API_URL = process.env.IEAM_RAG_API_URL || 'http://localhost:3000/query';
-
 /**
  * Interface for IEAM query tool parameters
  */
@@ -19,11 +16,31 @@ interface IeamQueryParams {
  */
 export function registerIeamDocQueryTool(server: McpServer) {
   // Make sure the tool name matches exactly what BobShell is trying to use
-  console.log('IEAM_RAG_API_URL: ', IEAM_RAG_API_URL);
   const toolName = 'ieam-doc-query';
   const toolDescription = `
-    Query IBM Edge Application Manager (IEAM) documentation using natural language.
-    This tool uses Retrieval-Augmented Generation endpoint provided to provide accurate answers from the official IEAM documentation.
+    Query IBM Edge Application Manager (IEAM) official documentation for conceptual information,
+    explanations, installation guides, architecture details, and best practices.
+    
+    This tool uses Retrieval-Augmented Generation (RAG) to search through comprehensive IEAM
+    documentation and provide detailed, context-aware answers from official IBM sources.
+    
+    BEST FOR THESE TYPES OF QUESTIONS:
+    - "What is IBM Edge Application Manager?" or "What is IEAM?"
+    - "Explain IEAM architecture" or "What are IEAM components?"
+    - "How to install IEAM?" or "What are prerequisites for installing IEAM?"
+    - "What features does IEAM provide?" or "What capabilities does IEAM have?"
+    - "Explain IEAM deployment patterns" or "What is an IEAM pattern?"
+    - "What is an edge node in IEAM?" or "What is the management hub?"
+    - "IEAM best practices" or "How to secure IEAM?"
+    - "Troubleshooting IEAM" or "IEAM system requirements"
+    - "Does IEAM support Kubernetes?" or "Can IEAM run containers?"
+    
+    NOT FOR:
+    - Specific API endpoint details (use api-query-tool for REST API technical details)
+    - API parameters, request/response formats, or curl examples
+    
+    Use this tool when you need to understand IEAM concepts, learn about features,
+    or get guidance from the official documentation.
   `;
   const toolSchema = {
     query: z.string().describe('Your question about IBM Edge Application Manager (IEAM)'),
@@ -64,7 +81,7 @@ export function registerIeamDocQueryTool(server: McpServer) {
       }
 
       console.log(`Processing IEAM documentation query: "${query}"`);
-      console.log(`Using IEAM_RAG_API_URL: ${IEAM_RAG_API_URL}`);
+      console.log(`Using IEAM_RAG_API_URL: ${process.env.IEAM_RAG_API_URL}`);
       
       // Query the IEAM-RAG system directly without fallbacks
       const answer = await queryIeamRag(query, topK);
@@ -95,7 +112,7 @@ export function registerIeamDocQueryTool(server: McpServer) {
    * @returns The answer to the query
    */
   async function queryIeamRag(query: string, topK: number): Promise<string> {
-    console.log(`Querying IEAM-RAG API at ${IEAM_RAG_API_URL} for: "${query}"`);
+    console.log(`Querying IEAM-RAG API at ${process.env.IEAM_RAG_API_URL} for: "${query}"`);
     
     try {
       // Prepare the request body
@@ -118,9 +135,9 @@ export function registerIeamDocQueryTool(server: McpServer) {
       }
       
       // Make the request to the IEAM-RAG API
-      console.log(`About to make POST request to ${IEAM_RAG_API_URL}`);
+      console.log(`About to make POST request to ${process.env.IEAM_RAG_API_URL}`);
       const response = await makePostRequest(
-        IEAM_RAG_API_URL,
+        process.env.IEAM_RAG_API_URL || 'http://localhost:3000/api/query',
         requestBody,
         headers
       );

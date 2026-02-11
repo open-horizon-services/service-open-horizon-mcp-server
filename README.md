@@ -170,6 +170,56 @@ The server provides the following tools through the MCP protocol. Each tool has 
 | `manage-ha-group` | Create, update, or get details of a high availability group | "Create a new HA group", "Update HA group X", "Get details of HA group X" |
 | `manage-ha-group-node` | Add or remove nodes from a high availability group | "Add node X to HA group Y", "Remove node X from HA group Y", "Manage nodes in HA group X" |
 
+### Documentation Query Tools
+
+| Tool Name | Description | Example Trigger Phrases |
+|-----------|-------------|------------------------|
+| `ieam-doc-query` | Query IEAM official documentation for conceptual information, explanations, installation guides, and best practices using RAG | "What is IBM Edge Application Manager?", "Explain IEAM architecture", "How to install IEAM?", "What are prerequisites for installing IEAM?", "Does IEAM support Kubernetes?" |
+| `api-query-tool` | Query the Open Horizon Exchange REST API specification for technical details about endpoints, parameters, and request/response formats | "What API endpoint lists services?", "Show me the GET services API", "What parameters does the node registration API need?", "Show me curl examples for the nodes API" |
+| `api-query-tool-nlp` | Enhanced API query tool with natural language processing for complex or conversational API queries | "How to update node policy?", "What's the best way to register a node?", "How do I create a deployment policy?" |
+
+#### Understanding the Documentation Query Tools
+
+The server provides three different tools for querying documentation, each optimized for different types of questions:
+
+**`ieam-doc-query`** - For Conceptual & Documentation Questions
+- **Purpose**: Queries the official IEAM documentation using Retrieval-Augmented Generation (RAG)
+- **Best for**:
+  - Understanding IEAM concepts and architecture
+  - Installation and setup guidance
+  - Feature explanations and capabilities
+  - Best practices and troubleshooting
+- **Example questions**:
+  - "What is IBM Edge Application Manager?"
+  - "Explain the IEAM architecture"
+  - "What are the prerequisites for installing IEAM?"
+  - "Does IEAM support Kubernetes workloads?"
+- **Data source**: Official IEAM documentation knowledge graph
+
+**`api-query-tool`** - For API Technical Details
+- **Purpose**: Queries the OpenAPI specification for REST API technical information
+- **Best for**:
+  - Finding specific API endpoints
+  - Understanding API parameters and request formats
+  - Getting curl command examples
+  - Learning about HTTP methods and response codes
+- **Example questions**:
+  - "What API endpoint lists services?"
+  - "What parameters does the service creation endpoint need?"
+  - "Show me the curl command for node registration"
+- **Data source**: OpenAPI/Swagger specification file
+
+**`api-query-tool-nlp`** - For Complex API Queries
+- **Purpose**: Enhanced API query tool with natural language understanding
+- **Best for**:
+  - Complex or conversational API questions
+  - "How to" questions about API usage
+  - Questions that don't match exact endpoint patterns
+- **Example questions**:
+  - "How to update node policy?"
+  - "What's the process for registering a node?"
+- **Data source**: OpenAPI specification with NLP analysis
+
 ## Architecture
 
 The Open Horizon MCP Server follows a modular architecture that enables AI assistants to interact with the Open Horizon Exchange API through the Model Context Protocol (MCP).
@@ -301,6 +351,7 @@ open-horizon-mcp-server/
 │   │   ├── get-node-policy.ts
 │   │   ├── get-policy-details.ts
 │   │   ├── get-service-details.ts
+│   │   ├── ieamDocQueryTool.ts
 │   │   ├── list-deployment-policies.ts
 │   │   ├── list-ha-groups.ts
 │   │   ├── list-management-policies.ts
