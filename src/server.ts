@@ -97,13 +97,15 @@ app.post(MCP_PATH, async (req, res) => {
     });
 
     // When this transport closes, clean up the session entry
+    // Must be set before connect() to satisfy Transport interface requirements
     transport.onclose = () => {
       if (transport.sessionId && sessions[transport.sessionId]) {
         delete sessions[transport.sessionId];
       }
     };
 
-    await server.connect(transport);
+    // Type assertion needed due to exactOptionalPropertyTypes strictness
+    await server.connect(transport as any);
 
     // After `onsessioninitialized` fires, `sessions[newSessionId]` is set.
     // But we can also assign it here for immediate access.

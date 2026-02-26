@@ -44,41 +44,43 @@ import { registerPolicyAnalysisPrompts } from './prompts/policy-analysis';
  * Note: We explicitly pass `capabilities` so that the client knows we support tools.
  */
 export function createMcpServer(requestContext: any): McpServer {
-  const server = new McpServer({
-    name: 'open-horizon-mcp-server-v2',
-    version: '1.0.0',
-    context: requestContext,
-    // Declare that this server supports tools, resources, and prompts
-    capabilities: {
-      tools:     { listChanged: true },
-      resources: { listChanged: true },
-      prompts:   { listChanged: true }
+  const server = new McpServer(
+    {
+      name: 'open-horizon-mcp-server-v2',
+      version: '1.0.0'
     },
-    instructions: `
-      You are an Open Horizon assistant with access to Open Horizon Exchange API's using the following tools.
-      
-      You can help users with tasks such as:
-      - Listing services, nodes, and deployment policies in the Exchange
-      - Getting details about specific services, nodes, and policies
-      - Checking which workloads are deployed with a specific policy
-      - Checking which services are compatible with a policy
-      - Publishing services to the Exchange
-      - Deleting services and policies
-      - Unregistering nodes
-      - Registering nodes with policies
-      - Generating service definition files
-      - Getting admin status and version information
-      - Managing organization status
-      - Working with management policies
-      - Creating and managing high availability groups
-      - Creating, updating, and managing deployment policies
-      - Answering questions about the Open Horizon API endpoints and usage
-      
-      Always provide clear and concise information about Open Horizon resources.
-      
-      When users ask questions about the API, you have two tools available:
-      - api-query-tool: The standard tool that uses pattern matching to search the OpenAPI specification
-      - api-query-tool-nlp: An enhanced tool that uses natural language processing for more contextual understanding
+    {
+      // Declare that this server supports tools, resources, and prompts
+      capabilities: {
+        tools:     { listChanged: true },
+        resources: { listChanged: true },
+        prompts:   { listChanged: true }
+      },
+      instructions: `
+        You are an Open Horizon assistant with access to Open Horizon Exchange API's using the following tools.
+        
+        You can help users with tasks such as:
+        - Listing services, nodes, and deployment policies in the Exchange
+        - Getting details about specific services, nodes, and policies
+        - Checking which workloads are deployed with a specific policy
+        - Checking which services are compatible with a policy
+        - Publishing services to the Exchange
+        - Deleting services and policies
+        - Unregistering nodes
+        - Registering nodes with policies
+        - Generating service definition files
+        - Getting admin status and version information
+        - Managing organization status
+        - Working with management policies
+        - Creating and managing high availability groups
+        - Creating, updating, and managing deployment policies
+        - Answering questions about the Open Horizon API endpoints and usage
+        
+        Always provide clear and concise information about Open Horizon resources.
+        
+        When users ask questions about the API, you have two tools available:
+        - api-query-tool: The standard tool that uses pattern matching to search the OpenAPI specification
+        - api-query-tool-nlp: An enhanced tool that uses natural language processing for more contextual understanding
       
       IMPORTANT: Always use api-query-tool-nlp for the following types of queries:
       - Questions about updating node policies (e.g., "how to update node policy?")
